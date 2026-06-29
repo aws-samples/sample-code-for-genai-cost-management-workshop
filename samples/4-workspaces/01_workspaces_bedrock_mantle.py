@@ -1,21 +1,23 @@
 """
-Amazon Bedrock Workspaces - Getting Started with the bedrock-mantle endpoint
+Amazon Bedrock Workspaces - Cost Attribution with the bedrock-mantle endpoint
 
-This sample demonstrates how to use Amazon Bedrock Workspaces to organize
-and isolate your generative AI workloads using the Anthropic-compatible
-Messages API on the bedrock-mantle endpoint.
+This sample demonstrates how to use Amazon Bedrock Workspaces for per-application
+cost attribution on the Anthropic-compatible Messages API (bedrock-mantle endpoint).
 
-Workspaces provide:
-- Application-level isolation for your AI workloads
-- Per-workspace cost tracking via AWS tags and Cost Explorer
-- Granular access control through IAM policies
-- Observability and usage metrics per workspace
+You will learn how to:
+- Create and tag workspaces with cost allocation attributes
+- Route inference calls through workspaces using the `anthropic-workspace` header
+- Track costs across multiple support tiers using separate workspaces
+- Run multi-turn conversations with full cost attribution
+
+Tags used: bedrock:workspaces:Application, bedrock:workspaces:Environment,
+           bedrock:workspaces:Team, bedrock:workspaces:CostCenter
 
 Prerequisites:
 - An AWS account with Amazon Bedrock access
 - A Bedrock API key (https://docs.aws.amazon.com/bedrock/latest/userguide/api-keys.html)
 - Access to Claude models on Amazon Bedrock
-- pip install anthropic requests
+- Dependencies installed via: pip install -r requirements.txt
 """
 
 import os
