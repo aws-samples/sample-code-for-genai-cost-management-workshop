@@ -42,4 +42,4 @@ These tags use the `bedrock:iam-principal:` prefix and are set on IAM users or r
 
 After running the sample, you can see the created IAM roles and their tags in the IAM console:
 
-![IAM Principal Roles](../../images/sample-inference-profiles.png)
+![IAM Principal Roles](../../images/sample-iam-principal-roles.png)
