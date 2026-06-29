@@ -1,10 +1,10 @@
 # Projects
 
-Sample code for creating and tagging projects for cost attribution on the `bedrock-mantle` endpoint (OpenAI-compatible API).
+Sample code for creating and tagging projects for cost attribution on the `bedrock-mantle` endpoint (OpenAI-compatible Responses API).
 
 ## Overview
 
-Projects provide resource-level tagging for workloads using the OpenAI-compatible API (Chat Completions, Responses) on the `bedrock-mantle` endpoint. Tags applied to projects flow to Cost Explorer and CUR 2.0.
+Projects provide resource-level tagging for workloads using the OpenAI-compatible Responses API on the `bedrock-mantle` endpoint. Tags applied to projects flow to Cost Explorer and CUR 2.0.
 
 ## Tags Used
 
@@ -21,7 +21,7 @@ These tags use the `bedrock:projects:` prefix and are set when creating or updat
 
 1. Create a project in Amazon Bedrock
 2. Tag the project with attributes like `bedrock:projects:Application`, `bedrock:projects:Environment`, `bedrock:projects:Team`, `bedrock:projects:CostCenter`
-3. Route OpenAI-compatible API calls through the project
+3. Route OpenAI-compatible Responses API calls through the project
 4. After ~24 hours, the tags become available for activation in AWS Billing > Cost Allocation Tags
 5. Activate the cost allocation tags
 6. Make additional API calls through the project
@@ -30,4 +30,17 @@ These tags use the `bedrock:projects:` prefix and are set when creating or updat
 ## Best For
 
 - Teams using the OpenAI SDK through the bedrock-mantle endpoint
-- Applications built on the OpenAI-compatible Chat Completions or Responses API
+- Applications built on the OpenAI-compatible Responses API
+
+## Prerequisites
+
+- Python 3.12+
+- A Bedrock API key ([create one here](https://docs.aws.amazon.com/bedrock/latest/userguide/api-keys.html)) or IAM credentials for bearer token generation
+- Access to OpenAI models (GPT-5.5) on Amazon Bedrock
+- Dependencies installed via `pip install -r requirements.txt` from the repository root
+
+## Viewing Your Projects
+
+After running the sample, you can see the created projects in the Bedrock console. Filter by **Status = Active** to view the projects and their associated tags:
+
+![Active Projects with Tags](../../images/projects-sample-active-projects.png)
