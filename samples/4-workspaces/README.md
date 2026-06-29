@@ -43,4 +43,4 @@ These tags use the `bedrock:workspaces:` prefix and are set when creating or upd
 
 After running the sample, you can see the created workspaces in the Bedrock console. Filter by **Status = Active** to view the workspaces and their associated tags:
 
-![Active Workspaces with Tags](../../images/workspaces-active-projects.png)
+![Active Workspaces with Tags](../../images/workspaces-sample-active-projects.png)
