@@ -30,7 +30,35 @@ import anthropic
 # ============================================================
 
 REGION = os.environ.get("AWS_REGION", "us-east-1")
-BEDROCK_API_KEY = os.environ.get("BEDROCK_API_KEY", "<your bedrock api key>")
+
+# Authentication: Choose one of two methods
+#
+# Option 1: Bedrock API Key (static, created in the Bedrock console)
+#   Export BEDROCK_API_KEY with your API key value.
+#
+# Option 2: Bearer Token from IAM credentials (recommended)
+#   Uses your existing IAM role/credentials to generate a short-lived token.
+#   No API key needed — just have valid AWS credentials configured.
+#   Requires: pip install aws-bedrock-token-generator
+
+BEDROCK_API_KEY = os.environ.get("BEDROCK_API_KEY")
+
+
+def get_auth_token() -> str:
+    """
+    Get authentication token for the bedrock-mantle endpoint.
+    Prefers BEDROCK_API_KEY if set, otherwise generates a bearer token
+    from IAM credentials using aws-bedrock-token-generator.
+    """
+    if BEDROCK_API_KEY:
+        return BEDROCK_API_KEY
+
+    # Generate a bearer token from IAM credentials
+    from aws_bedrock_token_generator import provide_token
+    return provide_token(region=REGION)
+
+
+AUTH_TOKEN = get_auth_token()
 
 # The bedrock-mantle endpoint for the Anthropic Messages API
 MANTLE_BASE_URL = f"https://bedrock-mantle.{REGION}.api.aws"
@@ -62,7 +90,7 @@ def get_or_create_workspace(name: str, tags: dict) -> dict:
     # Create a new one
     url = f"{MANTLE_BASE_URL}/v1/organization/projects"
     headers = {
-        "Authorization": f"Bearer {BEDROCK_API_KEY}",
+        "Authorization": f"Bearer {AUTH_TOKEN}",
         "Content-Type": "application/json",
     }
     payload = {
@@ -81,7 +109,7 @@ def list_workspaces() -> dict:
     """List all workspaces (projects) in the account."""
     url = f"{MANTLE_BASE_URL}/v1/organization/projects"
     headers = {
-        "Authorization": f"Bearer {BEDROCK_API_KEY}",
+        "Authorization": f"Bearer {AUTH_TOKEN}",
     }
 
     response = requests.get(url, headers=headers)
@@ -114,7 +142,7 @@ def delete_all_workspaces() -> None:
 
         url = f"{MANTLE_BASE_URL}/v1/organization/projects/{project_id}/archive"
         headers = {
-            "Authorization": f"Bearer {BEDROCK_API_KEY}",
+            "Authorization": f"Bearer {AUTH_TOKEN}",
             "Content-Type": "application/json",
         }
         response = requests.post(url, headers=headers)
@@ -140,7 +168,7 @@ def invoke_with_workspace_sdk(workspace_id: str, user_message: str) -> str:
     """
     client = anthropic.Anthropic(
         base_url=ANTHROPIC_BASE_URL,
-        api_key=BEDROCK_API_KEY,
+        api_key=AUTH_TOKEN,
     )
 
     response = client.messages.create(
@@ -162,7 +190,7 @@ def invoke_with_workspace_http(workspace_id: str, user_message: str) -> dict:
     """
     url = f"{ANTHROPIC_BASE_URL}/v1/messages"
     headers = {
-        "x-api-key": BEDROCK_API_KEY,
+        "x-api-key": AUTH_TOKEN,
         "anthropic-version": "2023-06-01",
         "anthropic-workspace": workspace_id,
         "Content-Type": "application/json",
@@ -187,7 +215,7 @@ def multi_turn_conversation(workspace_id: str) -> None:
     """
     client = anthropic.Anthropic(
         base_url=ANTHROPIC_BASE_URL,
-        api_key=BEDROCK_API_KEY,
+        api_key=AUTH_TOKEN,
     )
 
     messages = []
@@ -336,7 +364,7 @@ def main():
 
     client = anthropic.Anthropic(
         base_url=ANTHROPIC_BASE_URL,
-        api_key=BEDROCK_API_KEY,
+        api_key=AUTH_TOKEN,
     )
 
     support_queries = [

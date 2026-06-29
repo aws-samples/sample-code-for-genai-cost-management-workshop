@@ -1,4 +1,5 @@
 anthropic
+aws-bedrock-token-generator
 boto3
 requests
 openai
