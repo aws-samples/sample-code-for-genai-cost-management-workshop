@@ -4,7 +4,7 @@ Sample code for attaching metadata to individual inference calls and querying in
 
 ## Overview
 
-Per-request metadata tagging gives you the finest-grained cost attribution. By attaching metadata key-value pairs to each API call, you can track costs down to individual tenants, features, or agent steps—without creating additional AWS resources.
+Per-request metadata tagging gives you the finest-grained cost attribution. By attaching metadata key-value pairs to each API call, you can track costs down to individual tenants, features, or agent steps—without creating additional AWS resources. Unlike the other billing-based methods (which take ~24 hours to appear in Cost Explorer), metadata is available in invocation logs **near real-time**, within minutes of the call.
 
 ## Metadata Keys Used
 
