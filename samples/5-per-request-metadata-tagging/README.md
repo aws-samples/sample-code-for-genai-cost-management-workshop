@@ -48,7 +48,7 @@ This mechanism provides **token counts**, not dollar costs. You convert tokens t
 
 ## Querying Metadata in CloudWatch Logs Insights
 
-After running the sample, you can query your model invocation logs in **CloudWatch Logs Insights** to aggregate token usage by tenant, feature, or agent task. Run these queries against the log group configured in your Bedrock model invocation logging settings.
+After running the sample, you can query your model invocation logs in **CloudWatch Logs Insights** to aggregate token usage by tenant, feature, or agent task. Logs are available **near real-time** — you can run these queries within minutes of making inference calls. Run these queries against the log group configured in your Bedrock model invocation logging settings.
 
 Example query — total tokens per tenant and feature:
 
