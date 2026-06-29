@@ -52,7 +52,7 @@ Generative AI spend is uniquely difficult to track:
 samples/
 ├── 1-iam-principal-attribution/      # IAM tagging and per-developer cost tracking
 ├── 2-application-inference-profiles/ # Profile creation and traffic routing
-├── 3-projects/                       # Projects for bedrock-mantle workloads
+├── 3-projects/                       # Projects for OpenAI Responses API
 ├── 4-workspaces/                     # Workspaces for Anthropic Messages API
 ├── 5-per-request-metadata-tagging/   # Per-request metadata and log queries
 └── 6-litellm/                        # LiteLLM proxy for multi-provider tracking
