@@ -38,3 +38,9 @@ These tags use the `bedrock:workspaces:` prefix and are set when creating or upd
 - A Bedrock API key ([create one here](https://docs.aws.amazon.com/bedrock/latest/userguide/api-keys.html))
 - Access to Claude models on Amazon Bedrock
 - Dependencies installed via `pip install -r requirements.txt` from the repository root
+
+## Viewing Your Workspaces
+
+After running the sample, you can see the created workspaces in the Bedrock console. Filter by **Status = Active** to view the workspaces and their associated tags:
+
+![Active Workspaces with Tags](../../images/workspaces-active-projects.png)
