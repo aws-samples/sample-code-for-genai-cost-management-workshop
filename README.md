@@ -49,14 +49,13 @@ Generative AI spend is uniquely difficult to track:
 ## Repository Structure
 
 ```
-├── module-0-setup/             # CloudFormation template and setup scripts
-├── module-1-iam-attribution/   # IAM tagging and inference call scripts
-├── module-2-inference-profiles/# Profile creation and traffic routing
-├── module-3-projects-workspaces/ # Project and workspace management
-├── module-4-metadata-tagging/  # Per-request metadata and log queries
-├── module-5-combining-methods/ # Multi-layer attribution and CUR joins
-├── module-6-dashboards-alerts/ # QuickSight, Budgets, and anomaly detection
-└── shared/                     # Common utilities and helper functions
+samples/
+├── 1-iam-principal-attribution/      # IAM tagging and per-developer cost tracking
+├── 2-application-inference-profiles/ # Profile creation and traffic routing
+├── 3-projects/                       # Projects for bedrock-mantle workloads
+├── 4-workspaces/                     # Workspaces for Anthropic Messages API
+├── 5-per-request-metadata-tagging/   # Per-request metadata and log queries
+└── 6-litellm/                        # LiteLLM proxy for multi-provider tracking
 ```
 
 ## Prerequisites
@@ -69,9 +68,30 @@ Generative AI spend is uniquely difficult to track:
 
 ## Getting Started
 
-1. Clone this repository
-2. Follow Module 0 to deploy the workshop infrastructure
-3. Work through modules 1–6 sequentially, or jump to any module independently
+1. Clone this repository:
+
+```bash
+git clone https://github.com/aws-samples/sample-code-for-genai-cost-management-workshop.git
+cd sample-code-for-genai-cost-management-workshop
+```
+
+2. Create a virtual environment and install dependencies:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+3. Configure your environment variables:
+
+```bash
+export AWS_REGION="us-east-1"
+export BEDROCK_API_KEY="your-bedrock-api-key"
+```
+
+4. Follow Module 0 to deploy the workshop infrastructure
+5. Work through modules 1–6 sequentially, or jump to any module independently
 
 ## Learning Objectives
 
