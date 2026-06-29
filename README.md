@@ -34,18 +34,6 @@ Generative AI spend is uniquely difficult to track:
 | Per-Request Metadata Tagging | bedrock-runtime | Near real-time | Token counts | Per request |
 | LiteLLM (third-party) | Proxy layer | Real-time | Estimated cost | Per request |
 
-## Workshop Modules
-
-| Module | Topic | Duration | Description |
-|--------|-------|----------|-------------|
-| 0 | Environment Setup | 15 min | Deploy CloudFormation stack, verify Bedrock access, explore sample app |
-| 1 | IAM Principal Attribution | 30 min | Tag IAM principals, activate cost allocation tags, track per-developer spend |
-| 2 | Application Inference Profiles | 30 min | Create tagged profiles, route traffic, compare costs, set budget alerts |
-| 3 | Projects & Workspaces | 30 min | Create projects/workspaces for bedrock-mantle workloads (Claude Code) |
-| 4 | Per-Request Metadata Tagging | 30 min | Add metadata to API calls, query invocation logs, build usage reports |
-| 5 | Combining Methods | 25 min | Multi-layer attribution for agents and developers, join CUR + logs |
-| 6 | Dashboards & Alerts | 20 min | QuickSight dashboards, AWS Budgets, Cost Anomaly Detection |
-
 ## Repository Structure
 
 ```
@@ -64,7 +52,6 @@ samples/
 - Basic familiarity with IAM roles and policies
 - Basic understanding of Amazon Bedrock APIs (Converse, InvokeModel)
 - Python 3.12+ and AWS CLI v2 configured
-- AWS CDK or CloudFormation for infrastructure deployment
 
 ## Getting Started
 
@@ -87,11 +74,15 @@ pip install -r requirements.txt
 
 ```bash
 export AWS_REGION="us-east-1"
-export BEDROCK_API_KEY="your-bedrock-api-key"
 ```
 
-4. Follow Module 0 to deploy the workshop infrastructure
-5. Work through modules 1–6 sequentially, or jump to any module independently
+For the bedrock-mantle samples (Projects and Workspaces), you also need a Bedrock API key or IAM credentials for bearer token generation:
+
+```bash
+export BEDROCK_API_KEY="your-bedrock-api-key"  # Optional: only for bedrock-mantle samples
+```
+
+4. Work through the samples sequentially, or jump to any method independently
 
 ## Learning Objectives
 
