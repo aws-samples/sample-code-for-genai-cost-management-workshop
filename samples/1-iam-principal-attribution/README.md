@@ -30,3 +30,16 @@ These tags use the `bedrock:iam-principal:` prefix and are set on IAM users or r
 
 - Per-developer visibility (including Claude Code users whose sessions map to IAM roles)
 - Team-level cost tracking with zero code changes
+
+## Prerequisites
+
+- Python 3.12+
+- IAM credentials with permissions for `iam:TagUser`, `iam:TagRole`, `iam:ListUserTags`, `iam:ListRoleTags`, and `bedrock-runtime:Converse`
+- Access to Claude or Nova models on Amazon Bedrock
+- Dependencies installed via `pip install -r requirements.txt` from the repository root
+
+## Viewing Your IAM Roles
+
+After running the sample, you can see the created IAM roles and their tags in the IAM console:
+
+![IAM Principal Roles](../../images/sample-inference-profiles.png)
