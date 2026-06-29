@@ -31,3 +31,16 @@ These tags use the `bedrock:inference-profiles:` prefix and are applied to the i
 
 - Per-application or per-team cost isolation on `bedrock-runtime` workloads
 - Multiple applications sharing a single AWS account
+
+## Prerequisites
+
+- Python 3.12+
+- IAM credentials with permissions for `bedrock:CreateInferenceProfile`, `bedrock:TagResource`, and `bedrock-runtime:Converse`
+- Access to Claude models on Amazon Bedrock
+- Dependencies installed via `pip install -r requirements.txt` from the repository root
+
+## Viewing Your Inference Profiles
+
+After running the sample, you can see the created inference profiles in the Bedrock console:
+
+![Application Inference Profiles](../../images/sample-inference-profiles.png)
