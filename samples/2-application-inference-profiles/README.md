@@ -44,3 +44,9 @@ These tags use the `bedrock:inference-profiles:` prefix and are applied to the i
 After running the sample, you can see the created inference profiles in the Bedrock console:
 
 ![Application Inference Profiles](../../images/sample-inference-profiles.png)
+
+## Activating Cost Allocation Tags
+
+After ~24 hours from making inference calls through the profiles, the tags will appear as **inactive** in AWS Billing > Cost Allocation Tags. You need to activate them to start seeing costs grouped by these tags in Cost Explorer.
+
+![Inactive Cost Allocation Tags](../../images/inactive-cost-allocation-tags-inference-profiles.png)

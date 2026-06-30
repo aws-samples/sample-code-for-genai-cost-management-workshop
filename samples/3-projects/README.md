@@ -44,3 +44,9 @@ These tags use the `bedrock:projects:` prefix and are set when creating or updat
 After running the sample, you can see the created projects in the Bedrock console. Filter by **Status = Active** to view the projects and their associated tags:
 
 ![Active Projects with Tags](../../images/projects-sample-active-projects.png)
+
+## Activating Cost Allocation Tags
+
+After ~24 hours from making inference calls through the projects, the tags will appear as **inactive** in AWS Billing > Cost Allocation Tags. You need to activate them to start seeing costs grouped by these tags in Cost Explorer.
+
+![Inactive Cost Allocation Tags](../../images/inactive-cost-allocation-tags-projects.png)

@@ -43,3 +43,9 @@ These tags use the `bedrock:iam-principal:` prefix and are set on IAM users or r
 After running the sample, you can see the created IAM roles and their tags in the IAM console:
 
 ![IAM Principal Roles](../../images/sample-iam-principal-roles.png)
+
+## Activating Cost Allocation Tags
+
+After ~24 hours from making inference calls, the tags will appear as **inactive** in AWS Billing > Cost Allocation Tags. You need to activate them to start seeing costs grouped by these tags in Cost Explorer.
+
+![Inactive Cost Allocation Tags](../../images/inactive-cost-allocation-tags-iam-principal.png)

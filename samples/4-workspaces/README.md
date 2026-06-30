@@ -44,3 +44,9 @@ These tags use the `bedrock:workspaces:` prefix and are set when creating or upd
 After running the sample, you can see the created workspaces in the Bedrock console. Filter by **Status = Active** to view the workspaces and their associated tags:
 
 ![Active Workspaces with Tags](../../images/workspaces-sample-active-projects.png)
+
+## Activating Cost Allocation Tags
+
+After ~24 hours from making inference calls through the workspaces, the tags will appear as **inactive** in AWS Billing > Cost Allocation Tags. You need to activate them to start seeing costs grouped by these tags in Cost Explorer.
+
+![Inactive Cost Allocation Tags](../../images/inactive-cost-allocation-tags-workspaces.png)
