@@ -108,8 +108,9 @@ def get_or_create_role(role_name: str, tags: dict) -> str:
         )
         print(f"  Attached BedrockInvokeAccess policy to '{role_name}'")
 
-    # Tag the role with cost allocation attributes
-    tag_iam_role(role_name, tags)
+        # Tag the role with cost allocation attributes only on creation
+        tag_iam_role(role_name, tags)
+
     return role_arn
 
 
