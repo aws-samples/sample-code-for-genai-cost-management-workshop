@@ -22,6 +22,7 @@ Prerequisites:
 
 import os
 import json
+from typing import Optional
 import boto3
 
 # ============================================================
@@ -82,7 +83,7 @@ def create_inference_profile(name: str, tags: dict, description: str = None, mod
     return response
 
 
-def find_profile_by_name(name: str) -> dict | None:
+def find_profile_by_name(name: str) -> Optional[dict]:
     """Find an existing application inference profile by name."""
     paginator = bedrock_client.get_paginator("list_inference_profiles")
     for page in paginator.paginate(typeEquals="APPLICATION"):
