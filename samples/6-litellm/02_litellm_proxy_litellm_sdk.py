@@ -17,7 +17,7 @@ Prerequisites:
 import litellm
 
 # Point LiteLLM SDK at the proxy
-litellm.api_base = "http://localhost:4000"
+litellm.api_base = "http://localhost:4000/litellm"
 litellm.api_key = "sk-1234"
 
 # --- Simple completion ---
@@ -102,5 +102,5 @@ for model in models:
     cost = litellm.completion_cost(completion_response=response)
     print(f"    Estimated Cost: ${cost:.6f}")
 
-print("\n→ Check aggregated spend by tags at http://localhost:4000/ui")
+print("\n→ Check aggregated spend by tags at http://localhost:4000/litellm/ui")
 print("→ Tags appear in the 'request_tags' field of spend logs")

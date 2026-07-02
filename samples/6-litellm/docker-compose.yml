@@ -25,6 +25,7 @@ services:
       - ./config.yaml:/app/config.yaml
     environment:
       LITELLM_MASTER_KEY: "sk-1234"
+      SERVER_ROOT_PATH: "/litellm"
       DATABASE_URL: "postgresql://litellm:litellm@db:5432/litellm"
       AWS_REGION_NAME: "us-east-1"
     env_file:

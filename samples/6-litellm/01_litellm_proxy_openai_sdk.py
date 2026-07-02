@@ -18,7 +18,7 @@ from openai import OpenAI
 # Point the OpenAI client at the LiteLLM proxy
 client = OpenAI(
     api_key="sk-1234",
-    base_url="http://localhost:4000/v1"
+    base_url="http://localhost:4000/litellm/v1"
 )
 
 # --- Simple completion ---
@@ -60,4 +60,4 @@ print(f"\nModel: {response.model}")
 print(f"Response: {response.choices[0].message.content}")
 print(f"Tokens - Input: {response.usage.prompt_tokens}, Output: {response.usage.completion_tokens}")
 print(f"Tags sent via header: cost-workshop, team-alpha, project-genai, environment-dev")
-print("\n→ Check spend by tags at http://localhost:4000/ui")
+print("\n→ Check spend by tags at http://localhost:4000/litellm/ui")

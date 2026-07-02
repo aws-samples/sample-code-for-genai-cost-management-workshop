@@ -75,8 +75,8 @@ docker compose ps
 ```
 
 Once running:
-- **Proxy API**: http://localhost:4000
-- **Admin UI**: http://localhost:4000/ui (login with username `admin` and master key `sk-1234`)
+- **Proxy API**: http://localhost:4000/litellm
+- **Admin UI**: http://localhost:4000/litellm/ui (login with username `admin` and master key `sk-1234`)
 
 ## Configuration
 
@@ -91,7 +91,7 @@ The `config.yaml` defines three Bedrock models using cross-region inference prof
 ## Quick test with curl
 
 ```bash
-curl http://localhost:4000/v1/chat/completions \
+curl http://localhost:4000/litellm/v1/chat/completions \
   -H "Authorization: Bearer sk-1234" \
   -H "Content-Type: application/json" \
   -H "x-litellm-tags: curl-test,cost-workshop" \
@@ -115,7 +115,7 @@ Example tags used in this sample:
 You can view spend aggregated by tag in the UI under **Usage** or via the API:
 
 ```bash
-curl "http://localhost:4000/spend/tags?start_date=2026-07-01&end_date=2026-07-31" \
+curl "http://localhost:4000/litellm/spend/tags?start_date=2026-07-01&end_date=2026-07-31" \
   -H "Authorization: Bearer sk-1234"
 ```
 
@@ -132,7 +132,7 @@ python 01_litellm_proxy_openai_sdk.py
 ```python
 from openai import OpenAI
 
-client = OpenAI(api_key="sk-1234", base_url="http://localhost:4000/v1")
+client = OpenAI(api_key="sk-1234", base_url="http://localhost:4000/litellm/v1")
 
 response = client.chat.completions.create(
     model="claude-haiku-4-5",
@@ -155,7 +155,7 @@ python 02_litellm_proxy_litellm_sdk.py
 ```python
 import litellm
 
-litellm.api_base = "http://localhost:4000"
+litellm.api_base = "http://localhost:4000/litellm"
 litellm.api_key = "sk-1234"
 
 response = litellm.completion(
@@ -185,7 +185,7 @@ print(f"Estimated Cost: ${cost:.6f}")
 
 Once the proxy is running and you've sent a few requests:
 
-1. Open http://localhost:4000/ui
+1. Open http://localhost:4000/litellm/ui
 2. Log in with username `admin` and master key (`sk-1234`)
 3. Navigate to the **Usage** tab to see per-model and per-tag spend estimates
 
