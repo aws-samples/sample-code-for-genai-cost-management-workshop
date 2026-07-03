@@ -68,6 +68,8 @@ This starts:
 - **PostgreSQL** on port 5432 (stores spend data, teams, keys)
 - **LiteLLM Proxy** on port 4000
 
+> **Note**: Allow about a minute for the services to fully initialize before sending requests.
+
 4. Verify everything is running:
 
 ```bash
