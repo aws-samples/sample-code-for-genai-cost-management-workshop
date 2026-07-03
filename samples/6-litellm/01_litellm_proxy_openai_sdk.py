@@ -45,7 +45,7 @@ print("With request tags for spend attribution")
 print("=" * 60)
 
 # Use x-litellm-tags header to pass tags for spend tracking.
-# Tags appear in the request_tags field of spend logs.
+# Tags appear in the 'Tags' section of each request trace in the UI.
 response = client.chat.completions.create(
     model="nova-2-lite",
     messages=[{"role": "user", "content": "What is Amazon Bedrock? Answer in one sentence."}],
@@ -61,3 +61,4 @@ print(f"Response: {response.choices[0].message.content}")
 print(f"Tokens - Input: {response.usage.prompt_tokens}, Output: {response.usage.completion_tokens}")
 print(f"Tags sent via header: cost-workshop, team-alpha, project-genai, environment-dev")
 print("\n→ Check spend by tags at http://localhost:4000/litellm/ui")
+print("→ Tags appear in the 'Tags' section of each request trace")

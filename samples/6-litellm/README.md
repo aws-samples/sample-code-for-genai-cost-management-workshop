@@ -105,7 +105,7 @@ Once running:
 
 ## Request Tags for Spend Attribution
 
-LiteLLM uses **request tags** to track spend by custom labels (team, project, environment, SDK type, etc.). Tags are passed via the `x-litellm-tags` header as a comma-separated string and appear in the `request_tags` field of spend logs.
+LiteLLM uses **request tags** to track spend by custom labels (team, project, environment, SDK type, etc.). Tags are passed via the `x-litellm-tags` header as a comma-separated string and appear in the **Tags** section of each request trace in the UI.
 
 Example tags used in this sample:
 - `openai-sdk` / `litellm-sdk` — identifies which SDK made the request

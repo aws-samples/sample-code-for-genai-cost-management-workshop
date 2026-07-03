@@ -103,4 +103,4 @@ for model in models:
     print(f"    Estimated Cost: ${cost:.6f}")
 
 print("\n→ Check aggregated spend by tags at http://localhost:4000/litellm/ui")
-print("→ Tags appear in the 'request_tags' field of spend logs")
+print("→ Tags appear in the 'Tags' section of each request trace")
