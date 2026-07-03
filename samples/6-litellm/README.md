@@ -76,10 +76,6 @@ This starts:
 docker compose ps
 ```
 
-Once running:
-- **Proxy API**: http://localhost:4000/litellm
-- **Admin UI**: http://localhost:4000/litellm/ui (login with username `admin` and master key `sk-1234`)
-
 ## Configuration
 
 The `config.yaml` defines three Bedrock models using cross-region inference profiles:
@@ -102,6 +98,10 @@ curl http://localhost:4000/litellm/v1/chat/completions \
     "messages": [{"role": "user", "content": "Hello! What is generative AI?"}]
   }'
 ```
+
+Once running:
+- **Proxy API**: http://localhost:4000/litellm
+- **Admin UI**: http://localhost:4000/litellm/ui (login with username `admin` and master key `sk-1234`)
 
 ## Request Tags for Spend Attribution
 
