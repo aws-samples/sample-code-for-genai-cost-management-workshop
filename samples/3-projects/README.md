@@ -32,6 +32,20 @@ These tags use the `bedrock:projects:` prefix and are set when creating or updat
 - Teams using the OpenAI SDK through the bedrock-mantle endpoint
 - Applications built on the OpenAI-compatible Responses API
 
+## Scripts
+
+| Script | Description |
+|--------|-------------|
+| `3-1_setup_projects.py` | Creates projects with cost allocation tags for multiple environments |
+| `3-2_invoke_models.py` | Invokes models through projects (OpenAI SDK, HTTP, multi-step agent) |
+
+Run them in order:
+
+```bash
+python 3-1_setup_projects.py   # Create & tag projects
+python 3-2_invoke_models.py    # Invoke models through projects
+```
+
 ## Prerequisites
 
 - Python 3.12+
