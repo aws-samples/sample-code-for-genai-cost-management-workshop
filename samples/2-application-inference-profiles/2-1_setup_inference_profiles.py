@@ -1,27 +1,28 @@
 """
-Amazon Bedrock Application Inference Profiles - Cost Attribution with bedrock-runtime
+Amazon Bedrock Application Inference Profiles - Profile Setup & Tagging
 
-This sample demonstrates how to use Application Inference Profiles for
-per-application cost attribution on the bedrock-runtime endpoint.
-
-You will learn how to:
-- Create application inference profiles wrapping foundation models
-- Tag profiles with cost allocation attributes
-- Route Converse API calls through profiles (using profile ARN instead of model ID)
-- Track costs across multiple applications using separate profiles
+This script handles the setup for per-application cost attribution:
+- Creates application inference profiles wrapping foundation models
+- Tags profiles with cost allocation attributes
+- Verifies tags are set correctly
+- Creates multiple profiles for different applications and models
 
 Tags used: bedrock:inference-profiles:Application, bedrock:inference-profiles:Environment,
            bedrock:inference-profiles:Team, bedrock:inference-profiles:CostCenter
 
 Prerequisites:
 - An AWS account with Amazon Bedrock access
-- IAM credentials with permissions for bedrock and bedrock-runtime
-- Access to Claude models on Amazon Bedrock
+- IAM credentials with permissions for bedrock:CreateInferenceProfile,
+  bedrock:ListInferenceProfiles, bedrock:ListTagsForResource,
+  bedrock:DeleteInferenceProfile
+- Access to Claude or Nova models on Amazon Bedrock
 - Dependencies installed via: pip install -r requirements.txt
+
+After running this script, use 2-2_invoke_models.py to make inference calls
+through the profiles.
 """
 
 import os
-import json
 from typing import Optional
 import boto3
 
@@ -31,9 +32,8 @@ import boto3
 
 REGION = os.environ.get("AWS_REGION", "us-east-1")
 
-# Boto3 clients for Bedrock management and runtime inference
+# Boto3 client for Bedrock management
 bedrock_client = boto3.client("bedrock", region_name=REGION)
-bedrock_runtime = boto3.client("bedrock-runtime", region_name=REGION)
 
 # The source model to wrap in an inference profile.
 # Use a system-defined inference profile ID as the model source.
@@ -117,90 +117,6 @@ def delete_inference_profile(profile_arn: str) -> None:
 
 
 # ============================================================
-# Inference Functions
-# ============================================================
-
-def invoke_with_profile(profile_arn: str, user_message: str, system_prompt: str = None) -> str:
-    """
-    Send a Converse API request through an inference profile.
-    Uses the profile ARN as the modelId — this is what routes the call
-    through the profile and associates costs with its tags.
-    """
-    messages = [{"role": "user", "content": [{"text": user_message}]}]
-
-    params = {
-        "modelId": profile_arn,
-        "messages": messages,
-        "inferenceConfig": {"maxTokens": 1024},
-    }
-    if system_prompt:
-        params["system"] = [{"text": system_prompt}]
-
-    response = bedrock_runtime.converse(**params)
-    return response["output"]["message"]["content"][0]["text"]
-
-
-def claims_processing_agent(profile_arn: str) -> None:
-    """
-    Simulate an insurance claims processing agent with multi-step reasoning.
-    All calls are attributed to the same inference profile for cost tracking.
-    """
-    system_prompt = (
-        "You are an insurance claims processing agent. You help assess claims, "
-        "verify policy coverage, estimate damages, and recommend next steps. "
-        "Be concise, professional, and cite relevant policy sections when applicable."
-    )
-
-    # Step 1: Initial claim assessment
-    print("  Step 1: Initial claim assessment...")
-    result = invoke_with_profile(
-        profile_arn=profile_arn,
-        system_prompt=system_prompt,
-        user_message=(
-            "New claim submitted: CLM-2024-78432. "
-            "Type: Auto collision. Date: June 15, 2026. "
-            "Policyholder: Michael Chen, Policy #AUT-889-2341. "
-            "Description: Rear-ended at intersection, airbags deployed, "
-            "vehicle towed from scene. No injuries reported. "
-            "Perform initial assessment and flag any concerns."
-        ),
-    )
-    print(f"  {result}\n")
-
-    # Step 2: Coverage verification
-    print("  Step 2: Verifying coverage...")
-    result = invoke_with_profile(
-        profile_arn=profile_arn,
-        system_prompt=system_prompt,
-        user_message=(
-            "Policy #AUT-889-2341 details: "
-            "Comprehensive + Collision coverage, $500 deductible, "
-            "$50,000 per-accident limit. Policy active since 2022, "
-            "no lapsed payments. Last claim: 18 months ago (windshield replacement). "
-            "Confirm coverage applies to claim CLM-2024-78432."
-        ),
-    )
-    print(f"  {result}\n")
-
-    # Step 3: Damage estimate and recommendation
-    print("  Step 3: Damage estimate and recommendation...")
-    result = invoke_with_profile(
-        profile_arn=profile_arn,
-        system_prompt=system_prompt,
-        user_message=(
-            "Adjuster report for CLM-2024-78432: "
-            "Front bumper replacement: $1,200. Hood repair: $800. "
-            "Radiator replacement: $650. Airbag replacement (2x): $2,400. "
-            "Labor: $1,500. Rental car (7 days): $490. "
-            "Total estimate: $7,040. "
-            "Vehicle value: $22,000. "
-            "Provide recommendation: approve, deny, or escalate. Include payout calculation."
-        ),
-    )
-    print(f"  {result}\n")
-
-
-# ============================================================
 # Main
 # ============================================================
 
@@ -224,8 +140,8 @@ def main():
         print("  No application inference profiles found.")
     print()
 
-    # Step 2: Create an inference profile with cost allocation tags
-    print("--- Step 2: Create Inference Profile ---")
+    # Step 2: Create the main inference profile with cost allocation tags
+    print("--- Step 2: Create Primary Inference Profile ---")
     profile = create_inference_profile(
         name="ClaimsProcessingAgent_Production",
         description="Production inference profile for the insurance claims processing agent",
@@ -246,22 +162,8 @@ def main():
         print(f"  {tag['key']} = {tag['value']}")
     print()
 
-    # Step 4: Invoke through the profile
-    print("--- Step 4: Inference Through Profile (Converse API) ---")
-    result = invoke_with_profile(
-        profile_arn=profile_arn,
-        system_prompt="You are a helpful assistant. Be concise.",
-        user_message="What are the key steps in processing an insurance claim from submission to payout?",
-    )
-    print(result)
-    print()
-
-    # Step 5: Multi-step claims processing agent
-    print("--- Step 5: Claims Processing Agent (Multi-step) ---")
-    claims_processing_agent(profile_arn)
-
-    # Step 6: Multiple profiles for different applications (each using a different model)
-    print("--- Step 6: Multiple Profiles (Different Applications & Models) ---")
+    # Step 4: Create additional profiles for different applications and models
+    print("--- Step 4: Create Additional Profiles (Different Applications & Models) ---")
     applications = [
         {
             "name": "ClaimsProcessingAgent_Staging",
@@ -298,28 +200,24 @@ def main():
         },
     ]
 
-    queries = [
-        "A claim was filed for hail damage but the weather report shows no hail that day. What should I check?",
-        "A 35-year-old homeowner in Seattle wants comprehensive coverage. What policy tier would you recommend?",
-        "Flag potential red flags: CLM-2024-91001 filed 2 days after policy activation, total loss claim on a 15-year-old vehicle valued at $3,200.",
-    ]
-
-    for app, query in zip(applications, queries):
-        prof = create_inference_profile(
+    for app in applications:
+        create_inference_profile(
             name=app["name"],
             description=app["description"],
             tags=app["tags"],
             model_source=app["model"],
         )
-        prof_arn = prof["inferenceProfileArn"]
+    print()
 
-        result = invoke_with_profile(
-            profile_arn=prof_arn,
-            user_message=query,
-        )
-        print(f"  [{app['name']}]")
-        print(f"  Query: {query}")
-        print(f"  Response: {result}\n")
+    print("--- Setup Complete ---")
+    print("  Inference profiles created and tagged.")
+    print("  You can now run 2-2_invoke_models.py to make inference calls through the profiles.")
+    print()
+    print("  Next steps:")
+    print("  1. Run 2-2_invoke_models.py to invoke models through the profiles")
+    print("  2. Wait ~24 hours for tags to appear in AWS Billing > Cost Allocation Tags")
+    print("  3. Activate the bedrock:inference-profiles:* tags")
+    print("  4. View per-application costs in Cost Explorer")
 
 
 if __name__ == "__main__":

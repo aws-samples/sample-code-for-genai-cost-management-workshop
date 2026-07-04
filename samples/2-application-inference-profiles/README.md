@@ -32,6 +32,20 @@ These tags use the `bedrock:inference-profiles:` prefix and are applied to the i
 - Per-application or per-team cost isolation on `bedrock-runtime` workloads
 - Multiple applications sharing a single AWS account
 
+## Scripts
+
+| Script | Description |
+|--------|-------------|
+| `2-1_setup_inference_profiles.py` | Creates application inference profiles, tags them with cost allocation attributes, and verifies tags |
+| `2-2_invoke_models.py` | Invokes Bedrock models through the profiles (single call, multi-step agent, multiple profiles) |
+
+Run them in order:
+
+```bash
+python 2-1_setup_inference_profiles.py   # Create & tag profiles
+python 2-2_invoke_models.py              # Invoke models through profiles
+```
+
 ## Prerequisites
 
 - Python 3.12+
