@@ -31,10 +31,24 @@ These tags use the `bedrock:iam-principal:` prefix and are set on IAM users or r
 - Per-developer visibility (including Claude Code users whose sessions map to IAM roles)
 - Team-level cost tracking with zero code changes
 
+## Scripts
+
+| Script | Description |
+|--------|-------------|
+| `1-1_setup_iam_roles.py` | Creates IAM roles for each developer, attaches Bedrock invoke permissions, and tags them with cost allocation attributes |
+| `1-2_invoke_models.py` | Assumes each developer role and makes Bedrock Converse API calls attributed to the role's tags |
+
+Run them in order:
+
+```bash
+python 1-1_setup_iam_roles.py   # Create & tag roles (waits for IAM propagation)
+python 1-2_invoke_models.py     # Invoke models as different developers
+```
+
 ## Prerequisites
 
 - Python 3.12+
-- IAM credentials with permissions for `iam:TagUser`, `iam:TagRole`, `iam:ListUserTags`, `iam:ListRoleTags`, and `bedrock-runtime:Converse`
+- IAM credentials with permissions for `iam:TagRole`, `iam:CreateRole`, `iam:PutRolePolicy`, `iam:ListRoleTags`, `sts:AssumeRole`, and `bedrock-runtime:Converse`
 - Access to Claude or Nova models on Amazon Bedrock
 - Dependencies installed via `pip install -r requirements.txt` from the repository root
 
