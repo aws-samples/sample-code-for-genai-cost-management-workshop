@@ -1,21 +1,18 @@
 """
-Amazon Bedrock Workspaces - Cost Attribution with the bedrock-mantle endpoint
+Amazon Bedrock Workspaces - Invoke Models Through Workspaces
 
-This sample demonstrates how to use Amazon Bedrock Workspaces for per-application
-cost attribution on the Anthropic-compatible Messages API (bedrock-mantle endpoint).
+This script invokes models through Bedrock Workspaces created by
+4-1_setup_workspaces.py. Costs are attributed to each workspace's tags
+in Cost Explorer.
 
 You will learn how to:
-- Create and tag workspaces with cost allocation attributes
-- Route inference calls through workspaces using the `anthropic-workspace` header
-- Track costs across multiple support tiers using separate workspaces
+- Route Anthropic SDK calls through workspaces using the anthropic-workspace header
+- Send raw HTTP requests with the anthropic-workspace header
 - Run multi-turn conversations with full cost attribution
 
-Tags used: bedrock:workspaces:Application, bedrock:workspaces:Environment,
-           bedrock:workspaces:Team, bedrock:workspaces:CostCenter
-
 Prerequisites:
-- An AWS account with Amazon Bedrock access
-- A Bedrock API key (https://docs.aws.amazon.com/bedrock/latest/userguide/api-keys.html)
+- Run 4-1_setup_workspaces.py first to create the workspaces
+- A Bedrock API key or IAM credentials for bearer token generation
 - Access to Claude models on Amazon Bedrock
 - Dependencies installed via: pip install -r requirements.txt
 """
@@ -70,43 +67,21 @@ ANTHROPIC_BASE_URL = f"{MANTLE_BASE_URL}/anthropic"
 #   - anthropic.claude-opus-4-8 (latest Opus)
 MODEL_ID = "anthropic.claude-haiku-4-5"
 
+# Workspace names created by 4-1_setup_workspaces.py
+WORKSPACE_NAMES = [
+    "Customer Support Agent - Production",
+    "Support Agent - Tier 1 (General)",
+    "Support Agent - Tier 2 (Technical)",
+    "Support Agent - Tier 3 (Escalation)",
+]
+
 
 # ============================================================
-# Workspace Management Functions
+# Helper Functions
 # ============================================================
 
-def get_or_create_workspace(name: str, tags: dict) -> dict:
-    """
-    Get an existing workspace by name, or create a new one if it doesn't exist.
-    Avoids creating duplicate workspaces with the same name.
-    """
-    # Check if a workspace with this name already exists
-    existing = list_workspaces()
-    for project in existing.get("data", []):
-        if project.get("name") == name:
-            print(f"  Workspace '{name}' already exists: {project['id']}")
-            return project
-
-    # Create a new one
-    url = f"{MANTLE_BASE_URL}/v1/organization/projects"
-    headers = {
-        "Authorization": f"Bearer {AUTH_TOKEN}",
-        "Content-Type": "application/json",
-    }
-    payload = {
-        "name": name,
-        "tags": tags,
-    }
-
-    response = requests.post(url, headers=headers, json=payload)
-    response.raise_for_status()
-    result = response.json()
-    print(f"  Created new workspace '{name}': {result['id']}")
-    return result
-
-
-def list_workspaces() -> dict:
-    """List all workspaces (projects) in the account."""
+def find_workspace_by_name(name: str) -> dict | None:
+    """Find an existing workspace by name."""
     url = f"{MANTLE_BASE_URL}/v1/organization/projects"
     headers = {
         "Authorization": f"Bearer {AUTH_TOKEN}",
@@ -117,42 +92,9 @@ def list_workspaces() -> dict:
     result = response.json()
 
     for project in result.get("data", []):
-        print(f"  {project.get('name', 'N/A')} — {project.get('arn', 'N/A')}")
-
-    return result
-
-
-def delete_all_workspaces() -> None:
-    """Archive all workspaces (projects) in the account, skipping the default."""
-    workspaces = list_workspaces()
-    projects = workspaces.get("data", [])
-
-    if not projects:
-        print("  No workspaces to delete.")
-        return
-
-    count = 0
-    for project in projects:
-        project_id = project["id"]
-
-        # Skip the default workspace — it cannot be archived
-        if project_id == "default":
-            print(f"  Skipping default workspace")
-            continue
-
-        url = f"{MANTLE_BASE_URL}/v1/organization/projects/{project_id}/archive"
-        headers = {
-            "Authorization": f"Bearer {AUTH_TOKEN}",
-            "Content-Type": "application/json",
-        }
-        response = requests.post(url, headers=headers)
-        if response.ok:
-            print(f"  Archived workspace: {project.get('name', project_id)} ({project_id})")
-            count += 1
-        else:
-            print(f"  Failed to archive {project_id}: {response.status_code} {response.text}")
-
-    print(f"  Done. Archived {count} workspace(s).")
+        if project.get("name") == name:
+            return project
+    return None
 
 
 # ============================================================
@@ -279,115 +221,84 @@ def multi_turn_conversation(workspace_id: str) -> None:
 # ============================================================
 
 def main():
-    # Optional: Set to True to delete all existing workspaces before running
-    CLEAN_START = False
+    # Resolve workspace IDs by name
+    print("--- Resolving Workspaces ---")
+    workspace_ids = {}
+    for name in WORKSPACE_NAMES:
+        ws = find_workspace_by_name(name)
+        if ws:
+            workspace_ids[name] = ws["id"]
+            print(f"  Found: {name} ({ws['id']})")
+        else:
+            print(f"  NOT FOUND: {name} — run 4-1_setup_workspaces.py first")
 
-    if CLEAN_START:
-        print("--- Deleting All Existing Workspaces ---")
-        delete_all_workspaces()
+    if not workspace_ids:
+        print("\n  No workspaces found. Please run 4-1_setup_workspaces.py first.")
+        return
+    print()
+
+    # Step 1: Inference using the Anthropic SDK with workspace header
+    primary_id = workspace_ids.get("Customer Support Agent - Production")
+    if primary_id:
+        print("--- Step 1: Inference with Workspace (Anthropic SDK) ---")
+        result = invoke_with_workspace_sdk(
+            workspace_id=primary_id,
+            user_message="A customer is asking about our return policy for electronics purchased more than 30 days ago. Summarize the key points I should mention.",
+        )
+        print(result)
         print()
 
-    # Step 1: List existing workspaces
-    print("--- Step 1: Listing Existing Workspaces ---")
-    workspaces = list_workspaces()
-    print(json.dumps(workspaces, indent=2))
-    print()
+        # Step 2: Inference using raw HTTP with workspace header
+        print("--- Step 2: Inference with Workspace (HTTP/requests) ---")
+        result = invoke_with_workspace_http(
+            workspace_id=primary_id,
+            user_message="Draft a polite response to a customer whose shipment was delayed by 2 days due to weather.",
+        )
+        print(json.dumps(result, indent=2))
+        print()
 
-    # Step 2: Get or create a workspace with tags for cost allocation
-    print("--- Step 2: Get or Create a Workspace ---")
-    workspace = get_or_create_workspace(
-        name="Customer Support Agent - Production",
-        tags={
-            "bedrock:workspaces:Application": "CustomerSupportAgent",
-            "bedrock:workspaces:Environment": "Production",
-            "bedrock:workspaces:Team": "CustomerExperience",
-            "bedrock:workspaces:CostCenter": "CX-5500",
-        },
-    )
-    print(json.dumps(workspace, indent=2))
-    workspace_id = workspace["id"]
-    print(f"Workspace ID: {workspace_id}\n")
+        # Step 3: Multi-turn customer support conversation
+        print("--- Step 3: Multi-turn Customer Support Conversation ---")
+        multi_turn_conversation(primary_id)
 
-    # Step 3: Inference using the Anthropic SDK with workspace header
-    print("--- Step 3: Inference with Workspace (Anthropic SDK) ---")
-    result = invoke_with_workspace_sdk(
-        workspace_id=workspace_id,
-        user_message="A customer is asking about our return policy for electronics purchased more than 30 days ago. Summarize the key points I should mention.",
-    )
-    print(result)
-    print()
-
-    # Step 4: Inference using raw HTTP with workspace header
-    print("--- Step 4: Inference with Workspace (HTTP/requests) ---")
-    result = invoke_with_workspace_http(
-        workspace_id=workspace_id,
-        user_message="Draft a polite response to a customer whose shipment was delayed by 2 days due to weather.",
-    )
-    print(json.dumps(result, indent=2))
-    print()
-
-    # Step 5: Multi-turn customer support conversation
-    print("--- Step 5: Multi-turn Customer Support Conversation ---")
-    multi_turn_conversation(workspace_id)
-
-    # Step 6: Multiple workspaces for different support tiers
-    print("--- Step 6: Multiple Workspaces (Support Tiers) ---")
-    tiers = [
-        {
-            "name": "Support Agent - Tier 1 (General)",
-            "tags": {
-                "bedrock:workspaces:Application": "CustomerSupportAgent",
-                "bedrock:workspaces:Environment": "Production",
-                "bedrock:workspaces:Team": "Tier1Support",
-                "bedrock:workspaces:CostCenter": "CX-5501",
-            },
-        },
-        {
-            "name": "Support Agent - Tier 2 (Technical)",
-            "tags": {
-                "bedrock:workspaces:Application": "CustomerSupportAgent",
-                "bedrock:workspaces:Environment": "Production",
-                "bedrock:workspaces:Team": "Tier2Technical",
-                "bedrock:workspaces:CostCenter": "CX-5502",
-            },
-        },
-        {
-            "name": "Support Agent - Tier 3 (Escalation)",
-            "tags": {
-                "bedrock:workspaces:Application": "CustomerSupportAgent",
-                "bedrock:workspaces:Environment": "Production",
-                "bedrock:workspaces:Team": "Tier3Escalation",
-                "bedrock:workspaces:CostCenter": "CX-5503",
-            },
-        },
-    ]
+    # Step 4: Invoke through different workspace tiers
+    print("--- Step 4: Invoke Through Multiple Workspaces (Support Tiers) ---")
 
     client = anthropic.Anthropic(
         base_url=ANTHROPIC_BASE_URL,
         api_key=AUTH_TOKEN,
     )
 
-    support_queries = [
-        "How do I reset my password?",
-        "My API integration is returning 429 errors after the latest update. I'm using the v3 SDK with retry logic.",
-        "I've been waiting 2 weeks for a resolution on ticket #ESC-1192. This is my third follow-up. I need to speak to a manager.",
-    ]
+    support_queries = {
+        "Support Agent - Tier 1 (General)": "How do I reset my password?",
+        "Support Agent - Tier 2 (Technical)": "My API integration is returning 429 errors after the latest update. I'm using the v3 SDK with retry logic.",
+        "Support Agent - Tier 3 (Escalation)": "I've been waiting 2 weeks for a resolution on ticket #ESC-1192. This is my third follow-up. I need to speak to a manager.",
+    }
 
-    for tier, query in zip(tiers, support_queries):
-        ws = get_or_create_workspace(name=tier["name"], tags=tier["tags"])
+    for name, query in support_queries.items():
+        ws_id = workspace_ids.get(name)
+        if not ws_id:
+            print(f"  [{name}] Skipped — workspace not found\n")
+            continue
 
         response = client.messages.create(
             model=MODEL_ID,
             max_tokens=256,
-            extra_headers={"anthropic-workspace": ws["id"]},
+            extra_headers={"anthropic-workspace": ws_id},
             system="You are a customer support agent. Respond appropriately for your support tier level.",
             messages=[
                 {"role": "user", "content": query}
             ],
         )
-        print(f"  [{tier['name']}]")
+        print(f"  [{name}]")
         print(f"  Query: {query}")
         print(f"  Response: {response.content[0].text}\n")
+
+    print("--- Done ---")
+    print("  Next steps:")
+    print("  1. Wait ~24 hours for tags to appear in AWS Billing > Cost Allocation Tags")
+    print("  2. Activate the bedrock:workspaces:* tags")
+    print("  3. View per-application costs in Cost Explorer")
 
 
 if __name__ == "__main__":
