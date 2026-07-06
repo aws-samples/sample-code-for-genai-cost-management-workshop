@@ -63,3 +63,9 @@ After running the sample, you can see the created IAM roles and their tags in th
 After ~24 hours from making inference calls, the tags will appear as **inactive** in AWS Billing > Cost Allocation Tags. You need to activate them to start seeing costs grouped by these tags in Cost Explorer.
 
 ![Inactive Cost Allocation Tags](../../images/inactive-cost-allocation-tags-iam-principal.png)
+
+## Viewing Costs in Cost Explorer
+
+After enabling cost allocation tags and continuing to invoke Bedrock models by running this sample code, wait ~24 hours for billing data to populate. You can then browse to Cost Explorer and see the spend per team:
+
+![Cost Explorer IAM Principal Attribution](../../images/Cost_Explorer_IAM_Principal_Attribution.png)
