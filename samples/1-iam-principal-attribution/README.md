@@ -58,6 +58,10 @@ After running the sample, you can see the created IAM roles and their tags in th
 
 ![IAM Principal Roles](../../images/sample-iam-principal-roles.png)
 
+Here's an example of the tags applied to a developer role (`bedrock-workshop-developer-alice`):
+
+![IAM Role Tags Example](../../images/iam-role-tags-example.png)
+
 ## Activating Cost Allocation Tags
 
 After ~24 hours from making inference calls, the tags will appear as **inactive** in AWS Billing > Cost Allocation Tags. You need to activate them to start seeing costs grouped by these tags in Cost Explorer.
