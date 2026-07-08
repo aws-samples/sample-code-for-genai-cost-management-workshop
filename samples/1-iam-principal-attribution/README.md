@@ -60,7 +60,7 @@ After running the sample, you can see the created IAM roles and their tags in th
 
 Here's an example of the tags applied to a developer role (`bedrock-workshop-developer-alice`):
 
-![IAM Role Tags Example](../../images/iam-role-tags-example.png)
+![IAM Role Tags Example](../../images/iam-role-bedrock-workshop-developer-alice.png)
 
 ## Activating Cost Allocation Tags
 
