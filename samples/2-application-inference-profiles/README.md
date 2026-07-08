@@ -59,6 +59,10 @@ After running the sample, you can see the created inference profiles in the Bedr
 
 ![Application Inference Profiles](../../images/sample-inference-profiles.png)
 
+Here's an example of the tags applied to an inference profile (`ClaimsProcessingAgent_Production`):
+
+![Inference Profile Tags Example](../../images/application-inference-profile-ClaimsProcessingAgent_Production.png)
+
 ## Activating Cost Allocation Tags
 
 After ~24 hours from making inference calls through the profiles, the tags will appear as **inactive** in AWS Billing > Cost Allocation Tags. You need to activate them to start seeing costs grouped by these tags in Cost Explorer.
