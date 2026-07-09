@@ -193,6 +193,30 @@ Once the proxy is running and you've sent a few requests:
 
 Spend data is persisted in PostgreSQL across restarts.
 
+### Tag Usage
+
+View how many requests were made with each tag:
+
+![LiteLLM Tag Usage](../../images/LiteLLM-Tag-Usage.png)
+
+### Spend Per Tag
+
+See cost breakdown grouped by your custom tags (team, project, environment):
+
+![LiteLLM Spend Per Tag](../../images/LiteLLM-Spend-Per-Tag.png)
+
+### Request Logs
+
+Browse individual request logs with full details:
+
+![LiteLLM Logs List](../../images/LiteLLM-Logs-Log-List.png)
+
+### Log Record Detail
+
+Drill into a single log record to see tokens, cost, model, and metadata:
+
+![LiteLLM Log Record Detail](../../images/LiteLLM-Logs-Log-Record.png)
+
 ## Stopping the Services
 
 ```bash
