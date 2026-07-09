@@ -10,7 +10,7 @@ Sample code for the AWS Workshop: **Track and Optimize Generative AI Spend for A
 
 As organizations scale their generative AI workloads on [Amazon Bedrock](https://aws.amazon.com/bedrock/), a common challenge emerges: *who is spending what, and where?* Whether you're running multi-tenant applications, enabling developers with [Claude Code](https://docs.anthropic.com/en/docs/claude-code), or deploying autonomous agents with [Amazon Bedrock AgentCore](https://aws.amazon.com/bedrock/agentcore/), you need visibility into how your AI budget is being consumed.
 
-This workshop provides hands-on experience with five AWS-native cost attribution mechanisms plus LiteLLM as a third-party option. You'll learn to implement each mechanism, combine them for real-world scenarios, and build cost dashboards for operational visibility.
+This workshop provides hands-on experience with six AWS-native cost attribution mechanisms plus LiteLLM as a third-party option. You'll learn to implement each mechanism, combine them for real-world scenarios, and build cost dashboards for operational visibility.
 
 For a detailed introduction to the concepts covered in this workshop, see the companion blog post: [Track and Optimize Generative AI Spend for Applications, Developers, and Agents on AWS](https://builder.aws.com/content/3EtxvhTvYLq48nhi2ClrYaYpQZH/track-and-optimize-generative-ai-spend-for-applications-developers-and-agents-on-aws).
 
@@ -32,6 +32,7 @@ Generative AI spend is uniquely difficult to track:
 | Projects | bedrock-mantle | Up to 24h | Billed dollars | Per project, per day |
 | Workspaces | bedrock-mantle | Up to 24h | Billed dollars | Per workspace, per day |
 | Per-Request Metadata Tagging | bedrock-runtime | Near real-time | Token counts | Per request |
+| IAM Identity Log Attribution | bedrock-runtime | Near real-time | Token counts | Per request |
 | LiteLLM (third-party) | Proxy layer | Real-time | Estimated cost | Per request |
 
 ## Repository Structure
@@ -43,7 +44,8 @@ samples/
 ├── 3-projects/                       # Projects for OpenAI Responses API
 ├── 4-workspaces/                     # Workspaces for Anthropic Messages API
 ├── 5-per-request-metadata-tagging/   # Per-request metadata and log queries
-└── 6-litellm/                        # LiteLLM proxy for multi-provider tracking
+├── 6-iam-identity-log-attribution/   # Model invocation logging with IAM caller identity
+└── 7-litellm/                        # LiteLLM proxy for multi-provider tracking
 ```
 
 ## Prerequisites
