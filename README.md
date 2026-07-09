@@ -32,7 +32,7 @@ Generative AI spend is uniquely difficult to track:
 | Projects | bedrock-mantle | Up to 24h | Billed dollars | Per project, per day |
 | Workspaces | bedrock-mantle | Up to 24h | Billed dollars | Per workspace, per day |
 | Per-Request Metadata Tagging | bedrock-runtime | Near real-time | Token counts | Per request |
-| IAM Identity Log Attribution | bedrock-runtime | Near real-time | Token counts | Per request |
+| IAM Identity Log Attribution | bedrock-runtime | Near real-time | Token counts | Per identity |
 | LiteLLM (third-party) | Proxy layer | Real-time | Estimated cost | Per request |
 
 ## Repository Structure
