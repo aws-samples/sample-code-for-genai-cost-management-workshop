@@ -74,3 +74,23 @@ After ~24 hours from making inference calls through the profiles, the tags will 
 After enabling cost allocation tags and continuing to invoke Bedrock models through inference profiles by running this sample code, wait ~24 hours for billing data to populate. You can then browse to Cost Explorer and see the spend per application:
 
 ![Cost Explorer Application Inference Profiles](../../images/Cost_Explorer_Application_Inference_Profiles.png)
+
+## Near Real-Time Visibility with CloudWatch Logs Insights
+
+While Cost Explorer and CUR provide billed-dollar visibility with a ~24 hour delay, you can get **near real-time token usage** per inference profile by querying model invocation logs in CloudWatch Logs Insights. When you invoke through a profile, the profile ARN appears as the `modelId` in the logs.
+
+Example query to see token usage by inference profile:
+
+```
+fields @timestamp, identity.arn, modelId, input.inputTokenCount, output.outputTokenCount
+| filter modelId like /application-inference-profile/
+| stats sum(input.inputTokenCount) as total_input_tokens,
+        sum(output.outputTokenCount) as total_output_tokens,
+        count(*) as request_count
+  by modelId
+| sort total_output_tokens desc
+```
+
+![CloudWatch Logs Insights Query Input](../../images/application-inference-profile-Query1-input.png)
+
+![CloudWatch Logs Insights Query Output](../../images/application-inference-profile-Query1-output.png)

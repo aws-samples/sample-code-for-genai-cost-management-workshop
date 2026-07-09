@@ -92,6 +92,11 @@ def get_or_create_project(name: str, tags: dict) -> dict:
     }
 
     response = requests.post(url, headers=headers, json=payload)
+    if response.status_code == 401:
+        print(f"  ERROR: Unauthorized (401). Your API key or bearer token does not have")
+        print(f"  permission to create projects. Ensure your IAM identity has")
+        print(f"  bedrock:CreateProject permission, or regenerate your API key with full access.")
+        response.raise_for_status()
     response.raise_for_status()
     result = response.json()
     print(f"  Created new project '{name}': {result['id']}")
