@@ -63,9 +63,9 @@ fields @timestamp, identity.arn, requestMetadata.tenant_id as tenant,
 | sort total_output_tokens desc
 ```
 
-![Query 1 Input](../../images/Per-Request-Metadata%20Tagging-query1-Input.png)
+![Query 1 Input](../../images/Per-Request-Metadata-Tagging-query1-Input.png)
 
-![Query 1 Output](../../images/Per-Request-Metadata%20Tagging-query1-Output.png)
+![Query 1 Output](../../images/Per-Request-Metadata-Tagging-query1-Output.png)
 
 Example query — per-task cost breakdown for an agent workflow:
 
@@ -79,6 +79,6 @@ fields @timestamp, requestMetadata.agent_id as agent, requestMetadata.task_id as
 | sort step asc
 ```
 
-![Query 2 Input](../../images/Per-Request-Metadata%20Tagging-query2-Input.png)
+![Query 2 Input](../../images/Per-Request-Metadata-Tagging-query2-Input.png)
 
-![Query 2 Output](../../images/Per-Request-Metadata%20Tagging-query2-Output.png)
+![Query 2 Output](../../images/Per-Request-Metadata-Tagging-query2-Output.png)
