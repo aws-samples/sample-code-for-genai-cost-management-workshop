@@ -11,7 +11,8 @@ This folder contains code samples for each cost attribution method covered in th
 | 3 | Projects | [3-projects](3-projects/) | Projects for OpenAI-compatible API workloads on bedrock-mantle |
 | 4 | Workspaces | [4-workspaces](4-workspaces/) | Workspaces for Anthropic Messages API on bedrock-mantle |
 | 5 | Per-Request Metadata Tagging | [5-per-request-metadata-tagging](5-per-request-metadata-tagging/) | Per-request metadata for tenant/task-level attribution |
-| 6 | LiteLLM | [6-litellm](6-litellm/) | Third-party proxy for real-time multi-provider cost tracking |
+| 6 | IAM Identity Log Attribution | [6-iam-identity-log-attribution](6-iam-identity-log-attribution/) | Model invocation logging with IAM caller identity for near real-time token tracking |
+| 7 | LiteLLM | [7-litellm](7-litellm/) | Third-party proxy for real-time multi-provider cost tracking |
 
 ## Tag Naming Convention
 

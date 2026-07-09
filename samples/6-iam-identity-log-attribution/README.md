@@ -31,7 +31,24 @@ This is complementary to CUR-based attribution: use invocation logs for real-tim
 
 ## Example CloudWatch Logs Insights Queries
 
-### Token usage by role (last 7 days, daily)
+These queries use the IAM roles created by `1-iam-principal-attribution` (Alice, Bob, Carol) to demonstrate per-developer token tracking via invocation logs.
+
+### Token usage by role
+
+```
+fields @timestamp, identity.arn, modelId, input.inputTokenCount, output.outputTokenCount
+| filter identity.arn like /bedrock-workshop-developer-(alice|bob|carol)/
+| parse identity.arn "assumed-role/*/" as role_name
+| stats sum(input.inputTokenCount) as total_input_tokens,
+        sum(output.outputTokenCount) as total_output_tokens,
+        count(*) as request_count
+  by role_name, modelId
+| sort total_output_tokens desc
+```
+
+### Token usage by role (last 7 days, daily breakdown)
+
+Set the time range to **Last 7 days** manually in the CloudWatch Logs Insights console.
 
 ```
 fields @timestamp, identity.arn, modelId, input.inputTokenCount, output.outputTokenCount
@@ -42,26 +59,4 @@ fields @timestamp, identity.arn, modelId, input.inputTokenCount, output.outputTo
         count(*) as request_count
   by bin(1d) as day, role_name, modelId
 | sort day desc, total_output_tokens desc
-```
-
-### All Bedrock usage grouped by caller identity
-
-```
-fields @timestamp, identity.arn, modelId, input.inputTokenCount, output.outputTokenCount
-| stats sum(input.inputTokenCount) as total_input_tokens,
-        sum(output.outputTokenCount) as total_output_tokens,
-        count(*) as request_count
-  by identity.arn, modelId
-| sort total_output_tokens desc
-```
-
-### Top consumers in the last hour
-
-```
-fields @timestamp, identity.arn, modelId, input.inputTokenCount, output.outputTokenCount
-| stats sum(input.inputTokenCount + output.outputTokenCount) as total_tokens,
-        count(*) as request_count
-  by identity.arn
-| sort total_tokens desc
-| limit 10
 ```
