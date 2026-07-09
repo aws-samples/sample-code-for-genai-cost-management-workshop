@@ -45,6 +45,9 @@ fields @timestamp, identity.arn, modelId, input.inputTokenCount, output.outputTo
   by role_name, modelId
 | sort total_output_tokens desc
 ```
+![Query 1 Input](../../images/IAM-Identity-Log-Attribution-query1-Input.png)
+
+![Query 1 Output](../../images/IAM-Identity-Log-Attribution-query1-Output.png)
 
 ### Token usage by role (last 7 days, daily breakdown)
 
@@ -60,3 +63,6 @@ fields @timestamp, identity.arn, modelId, input.inputTokenCount, output.outputTo
   by bin(1d) as day, role_name, modelId
 | sort day desc, total_output_tokens desc
 ```
+![Query 2 Input](../../images/IAM-Identity-Log-Attribution-query2-Input.png)
+
+![Query 2 Output](../../images/IAM-Identity-Log-Attribution-query2-Output.png)
