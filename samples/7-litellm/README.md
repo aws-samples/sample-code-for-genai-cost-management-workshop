@@ -34,7 +34,7 @@ Placing any proxy in front of Amazon Bedrock collapses the IAM identity—all ca
 1. Navigate to the LiteLLM sample folder:
 
 ```bash
-cd samples/6-litellm
+cd samples/7-litellm
 ```
 
 2. Create a `.env` file with your AWS credentials:
