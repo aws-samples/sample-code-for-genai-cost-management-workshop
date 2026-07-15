@@ -1,10 +1,10 @@
 # Workspaces
 
-Sample code for creating workspaces and using the `anthropic-workspace` header for cost attribution on the Anthropic Messages API.
+Sample code for creating workspaces and using the `anthropic-workspace-id` header for cost attribution on the Anthropic Messages API.
 
 ## Overview
 
-Workspaces provide cost attribution for the Anthropic-compatible Messages API on the `bedrock-mantle` endpoint. By setting the `anthropic-workspace` HTTP header on each request, tags applied to the workspace appear in your billing tools.
+Workspaces provide cost attribution for the Anthropic-compatible Messages API on the `bedrock-mantle` endpoint. By setting the `anthropic-workspace-id` HTTP header on each request, tags applied to the workspace appear in your billing tools.
 
 ## Tags Used
 
@@ -21,7 +21,7 @@ These tags use the `bedrock:workspaces:` prefix and are set when creating or upd
 
 1. Create a workspace in Amazon Bedrock
 2. Tag the workspace with attributes like `bedrock:workspaces:Application`, `bedrock:workspaces:Environment`, `bedrock:workspaces:Team`, `bedrock:workspaces:CostCenter`
-3. Make inference calls using the `anthropic-workspace` header in your Anthropic SDK requests
+3. Make inference calls using the `anthropic-workspace-id` header in your Anthropic SDK requests
 4. After ~24 hours, the tags become available for activation in AWS Billing > Cost Allocation Tags
 5. Activate the cost allocation tags
 6. Make additional inference calls through the workspace
