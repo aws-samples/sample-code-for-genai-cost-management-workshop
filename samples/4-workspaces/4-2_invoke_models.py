@@ -80,8 +80,8 @@ WORKSPACE_NAMES = [
 # Helper Functions
 # ============================================================
 
-def find_workspace_by_name(name: str) -> dict | None:
-    """Find an existing workspace by name."""
+def list_workspaces() -> dict:
+    """List all workspaces (projects) in the account."""
     url = f"{MANTLE_BASE_URL}/v1/organization/projects"
     headers = {
         "Authorization": f"Bearer {AUTH_TOKEN}",
@@ -89,7 +89,12 @@ def find_workspace_by_name(name: str) -> dict | None:
 
     response = requests.get(url, headers=headers)
     response.raise_for_status()
-    result = response.json()
+    return response.json()
+
+
+def find_workspace_by_name(name: str) -> dict | None:
+    """Find an existing workspace by name."""
+    result = list_workspaces()
 
     for project in result.get("data", []):
         if project.get("name") == name:
@@ -220,6 +225,13 @@ def multi_turn_conversation(workspace_id: str) -> None:
 # ============================================================
 
 def main():
+    # Step 0: List all workspaces
+    print("--- Listing All Workspaces ---")
+    workspaces = list_workspaces()
+    for project in workspaces.get("data", []):
+        print(f"  {project.get('name', 'N/A')} — {project.get('id', 'N/A')}")
+    print()
+
     # Resolve workspace IDs by name
     print("--- Resolving Workspaces ---")
     workspace_ids = {}
