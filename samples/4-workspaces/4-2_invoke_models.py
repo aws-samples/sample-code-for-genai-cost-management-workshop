@@ -6,8 +6,8 @@ This script invokes models through Bedrock Workspaces created by
 in Cost Explorer.
 
 You will learn how to:
-- Route Anthropic SDK calls through workspaces using the anthropic-workspace header
-- Send raw HTTP requests with the anthropic-workspace header
+- Route Anthropic SDK calls through workspaces using the anthropic-workspace-id header
+- Send raw HTTP requests with the anthropic-workspace-id header
 - Run multi-turn conversations with full cost attribution
 
 Prerequisites:
@@ -65,7 +65,7 @@ ANTHROPIC_BASE_URL = f"{MANTLE_BASE_URL}/anthropic"
 #   - anthropic.claude-haiku-4-5 (fast, cost-effective)
 #   - anthropic.claude-opus-4-7 (powerful, 1M context)
 #   - anthropic.claude-opus-4-8 (latest Opus)
-MODEL_ID = "anthropic.claude-haiku-4-5"
+MODEL_ID = "anthropic.claude-opus-4-8"
 
 # Workspace names created by 4-1_setup_workspaces.py
 WORKSPACE_NAMES = [
@@ -106,17 +106,18 @@ def invoke_with_workspace_sdk(workspace_id: str, user_message: str) -> str:
     Send a Messages API request associated with a specific workspace
     using the Anthropic Python SDK.
 
-    The workspace is specified via the `anthropic-workspace` extra header.
+    The workspace is specified via the `anthropic-workspace-id` default header,
+    which ensures proper cost attribution to the workspace in Cost Explorer.
     """
     client = anthropic.Anthropic(
         base_url=ANTHROPIC_BASE_URL,
         api_key=AUTH_TOKEN,
+        default_headers={"anthropic-workspace-id": workspace_id},
     )
 
     response = client.messages.create(
         model=MODEL_ID,
         max_tokens=1024,
-        extra_headers={"anthropic-workspace": workspace_id},
         messages=[
             {"role": "user", "content": user_message}
         ],
@@ -134,7 +135,7 @@ def invoke_with_workspace_http(workspace_id: str, user_message: str) -> dict:
     headers = {
         "x-api-key": AUTH_TOKEN,
         "anthropic-version": "2023-06-01",
-        "anthropic-workspace": workspace_id,
+        "anthropic-workspace-id": workspace_id,
         "Content-Type": "application/json",
     }
     payload = {
@@ -158,6 +159,7 @@ def multi_turn_conversation(workspace_id: str) -> None:
     client = anthropic.Anthropic(
         base_url=ANTHROPIC_BASE_URL,
         api_key=AUTH_TOKEN,
+        default_headers={"anthropic-workspace-id": workspace_id},
     )
 
     messages = []
@@ -171,7 +173,6 @@ def multi_turn_conversation(workspace_id: str) -> None:
     response = client.messages.create(
         model=MODEL_ID,
         max_tokens=1024,
-        extra_headers={"anthropic-workspace": workspace_id},
         system="You are a customer support agent for an e-commerce company. Be helpful, empathetic, and concise. If you need to look up information, explain what you're checking.",
         messages=messages,
     )
@@ -189,7 +190,6 @@ def multi_turn_conversation(workspace_id: str) -> None:
     response = client.messages.create(
         model=MODEL_ID,
         max_tokens=1024,
-        extra_headers={"anthropic-workspace": workspace_id},
         system="You are a customer support agent for an e-commerce company. Be helpful, empathetic, and concise. If you need to look up information, explain what you're checking.",
         messages=messages,
     )
@@ -207,7 +207,6 @@ def multi_turn_conversation(workspace_id: str) -> None:
     response = client.messages.create(
         model=MODEL_ID,
         max_tokens=1024,
-        extra_headers={"anthropic-workspace": workspace_id},
         system="You are a customer support agent for an e-commerce company. Be helpful, empathetic, and concise. If you need to look up information, explain what you're checking.",
         messages=messages,
     )
@@ -264,11 +263,6 @@ def main():
     # Step 4: Invoke through different workspace tiers
     print("--- Step 4: Invoke Through Multiple Workspaces (Support Tiers) ---")
 
-    client = anthropic.Anthropic(
-        base_url=ANTHROPIC_BASE_URL,
-        api_key=AUTH_TOKEN,
-    )
-
     support_queries = {
         "Support Agent - Tier 1 (General)": "How do I reset my password?",
         "Support Agent - Tier 2 (Technical)": "My API integration is returning 429 errors after the latest update. I'm using the v3 SDK with retry logic.",
@@ -281,10 +275,15 @@ def main():
             print(f"  [{name}] Skipped — workspace not found\n")
             continue
 
+        client = anthropic.Anthropic(
+            base_url=ANTHROPIC_BASE_URL,
+            api_key=AUTH_TOKEN,
+            default_headers={"anthropic-workspace-id": ws_id},
+        )
+
         response = client.messages.create(
             model=MODEL_ID,
             max_tokens=256,
-            extra_headers={"anthropic-workspace": ws_id},
             system="You are a customer support agent. Respond appropriately for your support tier level.",
             messages=[
                 {"role": "user", "content": query}
