@@ -73,3 +73,53 @@ After ~24 hours from making inference calls, the tags will appear as **inactive*
 After enabling cost allocation tags and continuing to invoke Bedrock models by running this sample code, wait ~24 hours for billing data to populate. You can then browse to Cost Explorer and see the spend per team:
 
 ![Cost Explorer IAM Principal Attribution](../../images/Cost_Explorer_IAM_Principal_Attribution.png)
+
+## Querying Costs with Athena (CUR 2.0 Data Exports)
+
+For deeper analysis beyond what Cost Explorer provides, you can query your cost data directly using Amazon Athena with [AWS Data Exports](https://docs.aws.amazon.com/cur/latest/userguide/what-is-data-exports.html). Data Exports delivers CUR 2.0 data to S3, where Athena can query it using standard SQL.
+
+This gives you full flexibility to slice costs by any tag combination, aggregate at any time granularity, and join with other datasets.
+
+### Prerequisites
+
+- A CUR 2.0 Data Export configured to deliver to S3 (see [Creating Data Exports](https://docs.aws.amazon.com/cur/latest/userguide/what-is-data-exports.html))
+- An Athena table created on top of the exported data (the examples below use `"my-cur-data-1"."data"`)
+- IAM principal cost allocation tags activated (from the previous steps)
+
+### Query 1: Daily costs by team (last 7 days)
+
+```sql
+-- Daily costs by team (IAM principal attribution) - last 7 days
+SELECT
+    DATE(line_item_usage_start_date) AS usage_date,
+    element_at(tags, 'iamPrincipal/bedrock:iam-principal:Team') AS team,
+    element_at(tags, 'iamPrincipal/bedrock:iam-principal:CostCenter') AS cost_center,
+    SUM(line_item_unblended_cost) AS daily_cost
+FROM "my-cur-data-1"."data"
+WHERE element_at(tags, 'iamPrincipal/bedrock:iam-principal:Team') IS NOT NULL
+  AND line_item_usage_start_date >= current_date - interval '7' day
+GROUP BY 1, 2, 3
+ORDER BY usage_date DESC, daily_cost DESC;
+```
+
+![Athena IAM Principal Daily Costs](../../images/Athena-IAM-Principal-Attribution-query1-Output.png)
+
+### Query 2: Hourly costs by team (last 72 hours)
+
+For finer-grained visibility, you can drill down to hourly cost breakdowns:
+
+```sql
+-- Hourly costs by team (IAM principal attribution) - last 72 hours
+SELECT
+    date_trunc('hour', line_item_usage_start_date) AS usage_hour,
+    element_at(tags, 'iamPrincipal/bedrock:iam-principal:Team') AS team,
+    element_at(tags, 'iamPrincipal/bedrock:iam-principal:CostCenter') AS cost_center,
+    SUM(line_item_unblended_cost) AS hourly_cost
+FROM "my-cur-data-1"."data"
+WHERE element_at(tags, 'iamPrincipal/bedrock:iam-principal:Team') IS NOT NULL
+  AND line_item_usage_start_date >= current_timestamp - interval '72' hour
+GROUP BY 1, 2, 3
+ORDER BY usage_hour DESC, hourly_cost DESC;
+```
+
+![Athena IAM Principal Hourly Costs](../../images/Athena-IAM-Principal-Attribution-query2-Output.png)
