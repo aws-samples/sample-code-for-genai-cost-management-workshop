@@ -86,6 +86,14 @@ This gives you full flexibility to slice costs by any tag combination, aggregate
 - An Athena table created on top of the exported data (the examples below use `"my-cur-data-1"."data"`)
 - IAM principal cost allocation tags activated (from the previous steps)
 
+### Navigating to Athena
+
+1. Open the [AWS Management Console](https://console.aws.amazon.com/)
+2. In the search bar at the top, type **Athena** and select **Amazon Athena**
+3. If this is your first time, click **Explore the query editor** to open the Athena Query Editor
+4. In the left panel, select your **Data source** (usually `AwsDataCatalog`) and the **Database** that corresponds to your CUR 2.0 Data Export (e.g., `my-cur-data-1`)
+5. Paste your SQL query in the query editor and click **Run**
+
 ### Query 1: Daily costs by team (last 7 days)
 
 ```sql
@@ -102,7 +110,9 @@ GROUP BY 1, 2, 3
 ORDER BY usage_date DESC, daily_cost DESC;
 ```
 
-![Athena IAM Principal Daily Costs](../../images/Athena-IAM-Principal-Attribution-query1-Output.png)
+![Athena IAM Principal Daily Costs - Query](../../images/Athena-IAM-Principal-Attribution-query1-Input.png)
+
+![Athena IAM Principal Daily Costs - Results](../../images/Athena-IAM-Principal-Attribution-query1-Output.png)
 
 ### Query 2: Hourly costs by team (last 72 hours)
 
@@ -122,4 +132,6 @@ GROUP BY 1, 2, 3
 ORDER BY usage_hour DESC, hourly_cost DESC;
 ```
 
-![Athena IAM Principal Hourly Costs](../../images/Athena-IAM-Principal-Attribution-query2-Output.png)
+![Athena IAM Principal Hourly Costs - Query](../../images/Athena-IAM-Principal-Attribution-query2-Input.png)
+
+![Athena IAM Principal Hourly Costs - Results](../../images/Athena-IAM-Principal-Attribution-query2-Output.png)
