@@ -64,3 +64,17 @@ After running the sample, you can see the created workspaces in the Bedrock cons
 After ~24 hours from making inference calls through the workspaces, the tags will appear as **inactive** in AWS Billing > Cost Allocation Tags. You need to activate them to start seeing costs grouped by these tags in Cost Explorer.
 
 ![Inactive Cost Allocation Tags](../../images/inactive-cost-allocation-tags-workspaces.png)
+
+## Viewing Costs in Cost Explorer
+
+After activating cost allocation tags and continuing to invoke models through workspaces, wait ~24 hours for billing data to populate. You can then view costs grouped by workspace team in Cost Explorer:
+
+1. Open **Billing and Cost Management** > **Cost Explorer**
+2. Set the **Granularity** to **Daily**
+3. Under **Group by**, set **Dimension** to **Tag**
+4. Select the tag `bedrock:workspaces:Team`
+5. Optionally filter by **Service** to scope results to Bedrock
+
+You'll see a breakdown of daily costs per team (e.g., CustomerExperience, Tier3Escalation, Tier2Technical, Tier1Support):
+
+![Cost Explorer Workspaces](../../images/Cost_Explorer_workspaces.png)
