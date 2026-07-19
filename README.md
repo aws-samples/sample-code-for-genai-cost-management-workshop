@@ -29,8 +29,8 @@ Generative AI spend is uniquely difficult to track:
 |-----------|----------|-------------------|-----------|-------------|
 | IAM Principal Attribution | bedrock-runtime | Up to 24h | Billed dollars | Per identity, per day |
 | Application Inference Profiles | bedrock-runtime | Up to 24h | Billed dollars | Per profile, per day |
-| Projects | bedrock-mantle | Up to 24h | Billed dollars | Per project, per day |
 | Workspaces | bedrock-mantle | Up to 24h | Billed dollars | Per workspace, per day |
+| Projects | bedrock-mantle | Up to 24h | Billed dollars | Per project, per day |
 | Per-Request Metadata Tagging | bedrock-runtime | Near real-time | Token counts | Per request |
 | IAM Identity Log Attribution | bedrock-runtime | Near real-time | Token counts | Per identity |
 | LiteLLM (third-party) | Proxy layer | Real-time | Estimated cost | Per request |
@@ -41,8 +41,8 @@ Generative AI spend is uniquely difficult to track:
 samples/
 ├── 1-iam-principal-attribution/      # IAM tagging and per-developer cost tracking
 ├── 2-application-inference-profiles/ # Profile creation and traffic routing
-├── 3-projects/                       # Projects for OpenAI Responses API
-├── 4-workspaces/                     # Workspaces for Anthropic Messages API
+├── 3-workspaces/                     # Workspaces for Anthropic Messages API
+├── 4-projects/                       # Projects for OpenAI Responses API
 ├── 5-per-request-metadata-tagging/   # Per-request metadata and log queries
 ├── 6-iam-identity-log-attribution/   # Model invocation logging with IAM caller identity
 └── 7-litellm/                        # LiteLLM proxy for multi-provider tracking
@@ -78,7 +78,7 @@ pip install -r requirements.txt
 export AWS_REGION="us-east-1"
 ```
 
-For the bedrock-mantle samples (Projects and Workspaces), you also need a Bedrock API key or IAM credentials for bearer token generation:
+For the bedrock-mantle samples (Workspaces and Projects), you also need a Bedrock API key or IAM credentials for bearer token generation:
 
 ```bash
 export BEDROCK_API_KEY="your-bedrock-api-key"  # Optional: only for bedrock-mantle samples
@@ -93,7 +93,7 @@ By the end of this workshop, you will be able to:
 1. Explain the cost attribution mechanisms available in Amazon Bedrock and when to use each
 2. Configure IAM principal attribution to track per-developer spend (including Claude Code users)
 3. Create and tag application inference profiles for per-application cost allocation
-4. Set up projects and workspaces for bedrock-mantle workloads
+4. Set up workspaces and projects for bedrock-mantle workloads
 5. Implement per-request metadata tagging for fine-grained per-prompt tracking
 6. Attribute costs for Amazon AgentCore agent workloads across tasks and sessions
 7. Combine multiple attribution methods for complete cost visibility

@@ -2,7 +2,7 @@
 Amazon Bedrock Workspaces - Invoke Models Through Workspaces
 
 This script invokes models through Bedrock Workspaces created by
-4-1_setup_workspaces.py. Costs are attributed to each workspace's tags
+3-1_setup_workspaces.py. Costs are attributed to each workspace's tags
 in Cost Explorer.
 
 You will learn how to:
@@ -11,7 +11,7 @@ You will learn how to:
 - Run multi-turn conversations with full cost attribution
 
 Prerequisites:
-- Run 4-1_setup_workspaces.py first to create the workspaces
+- Run 3-1_setup_workspaces.py first to create the workspaces
 - A Bedrock API key or IAM credentials for bearer token generation
 - Access to Claude models on Amazon Bedrock
 - Dependencies installed via: pip install -r requirements.txt
@@ -67,7 +67,7 @@ ANTHROPIC_BASE_URL = f"{MANTLE_BASE_URL}/anthropic"
 #   - anthropic.claude-opus-4-8 (latest Opus)
 MODEL_ID = "anthropic.claude-opus-4-8"
 
-# Workspace names created by 4-1_setup_workspaces.py
+# Workspace names created by 3-1_setup_workspaces.py
 WORKSPACE_NAMES = [
     "Customer Support Agent - Production",
     "Support Agent - Tier 1 (General)",
@@ -241,10 +241,10 @@ def main():
             workspace_ids[name] = ws["id"]
             print(f"  Found: {name} ({ws['id']})")
         else:
-            print(f"  NOT FOUND: {name} — run 4-1_setup_workspaces.py first")
+            print(f"  NOT FOUND: {name} — run 3-1_setup_workspaces.py first")
 
     if not workspace_ids:
-        print("\n  No workspaces found. Please run 4-1_setup_workspaces.py first.")
+        print("\n  No workspaces found. Please run 3-1_setup_workspaces.py first.")
         return
     print()
 

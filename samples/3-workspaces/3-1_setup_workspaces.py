@@ -17,7 +17,7 @@ Prerequisites:
 - A Bedrock API key or IAM credentials for bearer token generation
 - Dependencies installed via: pip install -r requirements.txt
 
-After running this script, use 4-2_invoke_models.py to make inference calls
+After running this script, use 3-2_invoke_models.py to make inference calls
 through the workspaces.
 """
 
@@ -219,10 +219,10 @@ def main():
 
     print("--- Setup Complete ---")
     print("  Workspaces created and tagged.")
-    print("  You can now run 4-2_invoke_models.py to make inference calls through the workspaces.")
+    print("  You can now run 3-2_invoke_models.py to make inference calls through the workspaces.")
     print()
     print("  Next steps:")
-    print("  1. Run 4-2_invoke_models.py to invoke models through workspaces")
+    print("  1. Run 3-2_invoke_models.py to invoke models through workspaces")
     print("  2. Wait ~24 hours for tags to appear in AWS Billing > Cost Allocation Tags")
     print("  3. Activate the bedrock:workspaces:* tags")
     print("  4. View per-application costs in Cost Explorer")

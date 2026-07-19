@@ -36,14 +36,14 @@ These tags use the `bedrock:projects:` prefix and are set when creating or updat
 
 | Script | Description |
 |--------|-------------|
-| `3-1_setup_projects.py` | Creates projects with cost allocation tags for multiple environments |
-| `3-2_invoke_models.py` | Invokes models through projects (OpenAI SDK, HTTP, multi-step agent) |
+| `4-1_setup_projects.py` | Creates projects with cost allocation tags for multiple environments |
+| `4-2_invoke_models.py` | Invokes models through projects (OpenAI SDK, HTTP, multi-step agent) |
 
 Run them in order:
 
 ```bash
-python 3-1_setup_projects.py   # Create & tag projects
-python 3-2_invoke_models.py    # Invoke models through projects
+python 4-1_setup_projects.py   # Create & tag projects
+python 4-2_invoke_models.py    # Invoke models through projects
 ```
 
 ## Prerequisites

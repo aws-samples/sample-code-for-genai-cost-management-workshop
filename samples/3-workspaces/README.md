@@ -36,14 +36,14 @@ These tags use the `bedrock:workspaces:` prefix and are set when creating or upd
 
 | Script | Description |
 |--------|-------------|
-| `4-1_setup_workspaces.py` | Creates workspaces with cost allocation tags for different support tiers |
-| `4-2_invoke_models.py` | Invokes models through workspaces (Anthropic SDK, HTTP, multi-turn conversation) |
+| `3-1_setup_workspaces.py` | Creates workspaces with cost allocation tags for different support tiers |
+| `3-2_invoke_models.py` | Invokes models through workspaces (Anthropic SDK, HTTP, multi-turn conversation) |
 
 Run them in order:
 
 ```bash
-python 4-1_setup_workspaces.py   # Create & tag workspaces
-python 4-2_invoke_models.py      # Invoke models through workspaces
+python 3-1_setup_workspaces.py   # Create & tag workspaces
+python 3-2_invoke_models.py      # Invoke models through workspaces
 ```
 
 ## Prerequisites

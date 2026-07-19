@@ -2,7 +2,7 @@
 Amazon Bedrock Projects - Invoke Models Through Projects
 
 This script invokes models through Bedrock Projects created by
-3-1_setup_projects.py. Costs are attributed to each project's tags
+4-1_setup_projects.py. Costs are attributed to each project's tags
 in Cost Explorer.
 
 You will learn how to:
@@ -11,7 +11,7 @@ You will learn how to:
 - Run a multi-step order fulfillment agent
 
 Prerequisites:
-- Run 3-1_setup_projects.py first to create the projects
+- Run 4-1_setup_projects.py first to create the projects
 - A Bedrock API key or IAM credentials for bearer token generation
 - Access to OpenAI models on Amazon Bedrock
 - Dependencies installed via: pip install -r requirements.txt
@@ -68,7 +68,7 @@ OPENAI_BASE_URL = f"{MANTLE_BASE_URL}/openai/v1"
 #   - openai.gpt-oss-20b (20B params, lower latency, cost-effective)
 MODEL_ID = "openai.gpt-5.5"
 
-# Project names created by 3-1_setup_projects.py
+# Project names created by 4-1_setup_projects.py
 PROJECT_NAMES = [
     "Order Fulfillment Agent - Staging",
     "Order Fulfillment Agent - Development",
@@ -219,10 +219,10 @@ def main():
             project_ids[name] = project["id"]
             print(f"  Found: {name} ({project['id']})")
         else:
-            print(f"  NOT FOUND: {name} — run 3-1_setup_projects.py first")
+            print(f"  NOT FOUND: {name} — run 4-1_setup_projects.py first")
 
     if not project_ids:
-        print("\n  No projects found. Please run 3-1_setup_projects.py first.")
+        print("\n  No projects found. Please run 4-1_setup_projects.py first.")
         return
     print()
 
