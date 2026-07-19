@@ -46,6 +46,37 @@ This mechanism provides **token counts**, not dollar costs. You convert tokens t
 
 > **Important:** Model invocation logging **must** be enabled in Amazon Bedrock settings before running this sample. Without logging enabled, the metadata you attach to requests will not be recorded anywhere. Enable it in the Bedrock console under **Settings > Model invocation logging**, choosing either CloudWatch Logs or S3 as the destination.
 
+## Enabling Model Invocation Logging
+
+Model invocation logging records every Bedrock API call (including input/output tokens, latency, and any attached metadata) to CloudWatch Logs, S3, or both. Without it enabled, per-request metadata has nowhere to land.
+
+### What it captures
+
+- Request and response metadata (including your custom `requestMetadata` fields)
+- Token counts (input and output) per request
+- Model ID, request ID, and timestamp
+- Optionally, full request/response content (if you enable text and image logging)
+
+### How to enable it
+
+1. Open the [Amazon Bedrock console](https://console.aws.amazon.com/bedrock/)
+2. In the left navigation, click **Settings** at the bottom
+3. Under **Model invocation logging**, click **Edit**
+4. Toggle logging **On**
+5. Choose your log destination:
+   - **CloudWatch Logs** - best for real-time queries with Logs Insights (recommended for this sample)
+   - **S3** - best for long-term storage and Athena queries
+   - **Both** - for real-time queries and archival
+6. For CloudWatch Logs, select or create a log group (e.g., `/aws/bedrock/model-invocation-logs`)
+7. Optionally enable **Text data** and **Image data** logging to capture full request/response content
+8. Click **Save**
+
+![Model Invocation Logging Settings](../../images/model-invocation-logging-1.png)
+
+![Model Invocation Logging Configuration](../../images/model-invocation-logging-2.png)
+
+> **Note:** It may take a few minutes after enabling logging for the first log entries to appear. Once enabled, all subsequent Bedrock API calls in the region will be logged to your chosen destination.
+
 ## Querying Metadata in CloudWatch Logs Insights
 
 After running the sample, you can query your model invocation logs in **CloudWatch Logs Insights** to aggregate token usage by tenant, feature, or agent task. Logs are available **near real-time** — you can run these queries within minutes of making inference calls. Run these queries against the log group configured in your Bedrock model invocation logging settings.
