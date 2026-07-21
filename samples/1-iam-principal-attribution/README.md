@@ -135,3 +135,25 @@ ORDER BY usage_hour DESC, hourly_cost DESC;
 ![Athena IAM Principal Hourly Costs - Query](../../images/Athena-IAM-Principal-Attribution-query2-Input.png)
 
 ![Athena IAM Principal Hourly Costs - Results](../../images/Athena-IAM-Principal-Attribution-query2-Output.png)
+
+### Query 3: Daily costs by cost center and model (last 7 days)
+
+To understand which models are driving costs for each cost center:
+
+```sql
+-- Daily costs by cost center and model (IAM principal attribution) - last 7 days
+SELECT
+    DATE(line_item_usage_start_date) AS usage_date,
+    element_at(tags, 'iamPrincipal/bedrock:iam-principal:CostCenter') AS cost_center,
+    regexp_extract(line_item_resource_id, '[^/]+$') AS model,
+    SUM(line_item_unblended_cost) AS daily_cost
+FROM "my-cur-data-1"."data"
+WHERE element_at(tags, 'iamPrincipal/bedrock:iam-principal:CostCenter') IS NOT NULL
+  AND line_item_usage_start_date >= current_date - interval '7' day
+GROUP BY 1, 2, 3
+ORDER BY usage_date DESC, daily_cost DESC;
+```
+
+![Athena IAM Principal Daily Costs by Cost Center and Model - Query](../../images/Athena-IAM-Principal-Attribution-query3-Input.png)
+
+![Athena IAM Principal Daily Costs by Cost Center and Model - Results](../../images/Athena-IAM-Principal-Attribution-query3-Output.png)
