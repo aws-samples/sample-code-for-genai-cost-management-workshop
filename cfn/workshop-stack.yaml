@@ -53,7 +53,7 @@ Parameters:
   SSMDocVersion:
     Type: String
     Description: SSM Document version (increment this to force document replacement during updates)
-    Default: v3
+    Default: v4
 
 Conditions:
   IsAL2023: !Equals [!Ref InstanceOperatingSystem, 'AmazonLinux-2023']
@@ -498,26 +498,6 @@ Resources:
                     mkdir -p ${HomeFolder} && chown -R ${CodeEditorUser}:${CodeEditorUser} ${HomeFolder}
                     sudo -u ${CodeEditorUser} git clone ${RepoUrl} ${HomeFolder}
                   fi
-          - name: SetupPythonVenv
-            action: aws:runShellScript
-            inputs:
-              timeoutSeconds: 600
-              runCommand:
-                - '#!/bin/bash'
-                - set -euo pipefail
-                - !Sub |
-                  sudo -u ${CodeEditorUser} --login bash <<'SCRIPT'
-                  cd ${HomeFolder}
-                  python3 -m venv .venv
-                  source .venv/bin/activate
-                  pip install --upgrade pip
-                  if [[ -f requirements.txt ]]; then
-                    echo "Found requirements.txt, installing dependencies..."
-                    pip install -r requirements.txt
-                  else
-                    echo "No requirements.txt found, skipping."
-                  fi
-                  SCRIPT
           - name: InstallDocker
             action: aws:runShellScript
             inputs:
@@ -828,10 +808,10 @@ Resources:
               timeoutSeconds: 300
               runCommand:
                 - '#!/bin/bash'
-                - dnf install -y python3.11 python3.11-pip python3-virtualenv python3-pytest python3-boto3
-                - !Sub echo 'alias python3=python3.11' >> /home/${CodeEditorUser}/.bashrc
-                - !Sub echo 'alias pip3=pip3.11' >> /home/${CodeEditorUser}/.bashrc
-                - python3.11 -m pip install --upgrade pip 2>&1
+                - dnf install -y python3.12 python3.12-pip python3-virtualenv python3-pytest python3-boto3
+                - !Sub echo 'alias python3=python3.12' >> /home/${CodeEditorUser}/.bashrc
+                - !Sub echo 'alias pip3=pip3.12' >> /home/${CodeEditorUser}/.bashrc
+                - python3.12 -m pip install --upgrade pip 2>&1
                 - !Sub sudo -u ${CodeEditorUser} --login code-editor-server --install-extension ms-python.python --force
           - name: InstallPythonApt
             action: aws:runShellScript
@@ -846,6 +826,26 @@ Resources:
                 - dpkg --configure -a
                 - apt-get -q update && DEBIAN_FRONTEND=noninteractive apt-get install -y -q python3-pip python3-venv python3-boto3 python3-pytest
                 - !Sub sudo -u ${CodeEditorUser} --login code-editor-server --install-extension ms-python.python --force
+          - name: SetupPythonVenv
+            action: aws:runShellScript
+            inputs:
+              timeoutSeconds: 600
+              runCommand:
+                - '#!/bin/bash'
+                - set -euo pipefail
+                - !Sub |
+                  sudo -u ${CodeEditorUser} --login bash <<'SCRIPT'
+                  cd ${HomeFolder}
+                  python3.12 -m venv .venv
+                  source .venv/bin/activate
+                  pip install --upgrade pip
+                  if [[ -f requirements.txt ]]; then
+                    echo "Found requirements.txt, installing dependencies..."
+                    pip install -r requirements.txt
+                  else
+                    echo "No requirements.txt found, skipping."
+                  fi
+                  SCRIPT
           - name: InstallClaude
             action: aws:runShellScript
             inputs:
@@ -884,7 +884,7 @@ Resources:
                   set -euo pipefail
                   mkdir -p /home/${CodeEditorUser}/temp-workshop
                   cd /home/${CodeEditorUser}/temp-workshop
-                  python3 -m venv .venv
+                  python3.12 -m venv .venv
                   source .venv/bin/activate
                   pip install --upgrade pip
                   pip install boto3 requests
@@ -1288,7 +1288,9 @@ Resources:
                       athena.update_work_group(
                           WorkGroup='primary',
                           ConfigurationUpdates={
-                              'RemoveResultConfiguration': True
+                              'ResultConfigurationUpdates': {
+                                  'RemoveOutputLocation': True
+                              }
                           }
                       )
                       logger.info('Removed primary workgroup result configuration')

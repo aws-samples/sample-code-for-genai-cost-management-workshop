@@ -1,6 +1,6 @@
-anthropic
-aws-bedrock-token-generator
-boto3
-requests
-openai
-litellm
+anthropic==0.120.2
+aws-bedrock-token-generator==1.1.0
+boto3==1.43.59
+requests==2.34.2
+openai==2.50.0
+litellm==1.94.0
