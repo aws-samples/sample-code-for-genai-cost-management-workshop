@@ -38,6 +38,8 @@ Generative AI spend is uniquely difficult to track:
 ## Repository Structure
 
 ```
+cfn/
+└── workshop-stack.yaml               # CloudFormation template for the workshop environment
 samples/
 ├── 1-iam-principal-attribution/      # IAM tagging and per-developer cost tracking
 ├── 2-application-inference-profiles/ # Profile creation and traffic routing
@@ -78,11 +80,9 @@ pip install -r requirements.txt
 export AWS_REGION="us-east-1"
 ```
 
-For the bedrock-mantle samples (Workspaces and Projects), you also need a Bedrock API key or IAM credentials for bearer token generation:
+3. Deploy the workshop infrastructure:
 
-```bash
-export BEDROCK_API_KEY="your-bedrock-api-key"  # Optional: only for bedrock-mantle samples
-```
+   Follow the instructions in [`cfn/README.md`](cfn/README.md) to deploy the CloudFormation stack.
 
 4. Work through the samples sequentially, or jump to any method independently
 
