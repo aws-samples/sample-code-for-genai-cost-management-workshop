@@ -33,11 +33,10 @@ ACCOUNT_ID = boto3.client("sts").get_caller_identity()["Account"]
 MANTLE_BASE_URL = f"https://bedrock-mantle.{REGION}.api.aws"
 OPENAI_BASE_URL = f"{MANTLE_BASE_URL}/openai/v1"
 
-# Models available on bedrock-mantle for the Responses API:
-#   - openai.gpt-5.5 (most capable, advanced coding and reasoning)
-#   - openai.gpt-5.4 (frontier reasoning, coding, tool use)
-#   - openai.gpt-oss-120b (120B params, general purpose)
-#   - openai.gpt-oss-20b (20B params, lower latency, cost-effective)
+# Models used in this sample (bedrock-mantle supports many models via the Responses API):
+#   - openai.gpt-5.6-luna (most capable, advanced coding and reasoning)
+#   - openai.gpt-5.6-terra (frontier reasoning, coding, tool use)
+#   - openai.gpt-5.6-sol (lower latency, cost-effective)
 MODELS = {
     "gpt-5.6-luna": "openai.gpt-5.6-luna",
     "gpt-5.6-terra": "openai.gpt-5.6-terra",
@@ -128,7 +127,7 @@ def invoke_with_assumed_role(role_arn: str, session_name: str, user_message: str
     )
 
     response = client.responses.create(
-        model=model_id or MODELS["gpt-oss-20b"],
+        model=model_id or MODELS["gpt-5.6-sol"],
         input=user_message,
     )
 
