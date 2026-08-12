@@ -3,7 +3,7 @@ Amazon Bedrock IAM Principal Attribution - IAM Role Setup & Tagging
 
 This script handles the IAM setup for per-developer cost attribution:
 - Creates IAM roles for each developer
-- Attaches Bedrock invoke permissions
+- Attaches Bedrock invoke permissions (bedrock-runtime and bedrock-mantle)
 - Tags roles with cost allocation attributes
 - Verifies tags are set correctly
 
@@ -16,8 +16,9 @@ Prerequisites:
   iam:PutRolePolicy, iam:ListRoleTags, iam:GetRole
 - Dependencies installed via: pip install -r requirements.txt
 
-After running this script, use 1-2_invoke_models.py to make inference calls
-as different developers.
+After running this script, use:
+- 1-2_invoke_models.py to make Converse API calls (bedrock-runtime)
+- 1-3_mantle_invoke_models.py to make Responses API calls (bedrock-mantle)
 """
 
 import os
@@ -85,6 +86,7 @@ BEDROCK_INVOKE_POLICY = json.dumps({
     "Version": "2012-10-17",
     "Statement": [
         {
+            # bedrock-runtime: Converse API, InvokeModel API (1-2_invoke_models.py)
             "Effect": "Allow",
             "Action": [
                 "bedrock:InvokeModel",
@@ -93,7 +95,16 @@ BEDROCK_INVOKE_POLICY = json.dumps({
                 "bedrock:ConverseStream",
             ],
             "Resource": "*",
-        }
+        },
+        {
+            # bedrock-mantle: Responses API, Chat Completions API (1-3_mantle_invoke_models.py)
+            "Effect": "Allow",
+            "Action": [
+                "bedrock-mantle:CreateInference",
+                "bedrock-mantle:CallWithBearerToken",
+            ],
+            "Resource": "*",
+        },
     ],
 })
 
@@ -112,6 +123,13 @@ def get_or_create_role(role_name: str, tags: dict) -> str:
         response = iam_client.get_role(RoleName=role_name)
         role_arn = response["Role"]["Arn"]
         print(f"  Role '{role_name}' already exists: {role_arn}")
+
+        # Update inline policy to ensure it has the latest permissions
+        iam_client.put_role_policy(
+            RoleName=role_name,
+            PolicyName="BedrockInvokeAccess",
+            PolicyDocument=BEDROCK_INVOKE_POLICY,
+        )
     except iam_client.exceptions.NoSuchEntityException:
         # Create the role
         response = iam_client.create_role(
@@ -221,14 +239,15 @@ def main():
     print()
 
     print("--- Setup Complete ---")
-    print("  Roles created and tagged. You can now run 1-2_invoke_models.py")
-    print("  to make inference calls as different developers.")
+    print("  Roles created and tagged. You can now run:")
+    print("  - 1-2_invoke_models.py for Converse API calls (bedrock-runtime)")
+    print("  - 1-3_mantle_invoke_models.py for Responses API calls (bedrock-mantle)")
     print()
     print("  Next steps:")
-    print("  1. Run 1-2_invoke_models.py to invoke models with assumed roles")
-    print("  3. Wait ~24 hours for tags to appear in AWS Billing > Cost Allocation Tags")
-    print("  4. Activate the bedrock:iam-principal:* tags")
-    print("  5. View per-developer costs in Cost Explorer")
+    print("  1. Run 1-2_invoke_models.py or 1-3_mantle_invoke_models.py")
+    print("  2. Wait ~24 hours for tags to appear in AWS Billing > Cost Allocation Tags")
+    print("  3. Activate the bedrock:iam-principal:* tags")
+    print("  4. View per-developer costs in Cost Explorer")
 
 
 if __name__ == "__main__":
