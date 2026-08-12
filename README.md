@@ -27,7 +27,7 @@ Generative AI spend is uniquely difficult to track:
 
 | Mechanism | Endpoint | Visibility Latency | Cost Type | Granularity |
 |-----------|----------|-------------------|-----------|-------------|
-| IAM Principal Attribution | bedrock-runtime | Up to 24h | Billed dollars | Per identity, per day |
+| IAM Principal Attribution | bedrock-runtime, bedrock-mantle | Up to 24h | Billed dollars | Per identity, per day |
 | Application Inference Profiles | bedrock-runtime | Up to 24h | Billed dollars | Per profile, per day |
 | Workspaces | bedrock-mantle | Up to 24h | Billed dollars | Per workspace, per day |
 | Projects | bedrock-mantle | Up to 24h | Billed dollars | Per project, per day |
