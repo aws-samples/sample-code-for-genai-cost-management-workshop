@@ -19,6 +19,8 @@ Prerequisites:
 After running this script, use:
 - 1-2_invoke_models.py to make Converse API calls (bedrock-runtime)
 - 1-3_mantle_invoke_models.py to make Responses API calls (bedrock-mantle)
+- 1-4_openai_runtime.py to make Converse, Chat Completions, and Responses
+  API calls (bedrock-runtime)
 """
 
 import os
@@ -86,13 +88,16 @@ BEDROCK_INVOKE_POLICY = json.dumps({
     "Version": "2012-10-17",
     "Statement": [
         {
-            # bedrock-runtime: Converse API, InvokeModel API (1-2_invoke_models.py)
+            # bedrock-runtime: Converse API, InvokeModel API (1-2_invoke_models.py),
+            # and the bedrock-runtime OpenAI-compatible endpoint used for the
+            # Chat Completions and Responses APIs (1-4_openai_runtime.py)
             "Effect": "Allow",
             "Action": [
                 "bedrock:InvokeModel",
                 "bedrock:InvokeModelWithResponseStream",
                 "bedrock:Converse",
                 "bedrock:ConverseStream",
+                "bedrock:CallWithBearerToken",
             ],
             "Resource": "*",
         },
@@ -242,9 +247,10 @@ def main():
     print("  Roles created and tagged. You can now run:")
     print("  - 1-2_invoke_models.py for Converse API calls (bedrock-runtime)")
     print("  - 1-3_mantle_invoke_models.py for Responses API calls (bedrock-mantle)")
+    print("  - 1-4_openai_runtime.py for Converse, Chat Completions, and Responses API calls (bedrock-runtime)")
     print()
     print("  Next steps:")
-    print("  1. Run 1-2_invoke_models.py or 1-3_mantle_invoke_models.py")
+    print("  1. Run 1-2_invoke_models.py, 1-3_mantle_invoke_models.py, or 1-4_openai_runtime.py")
     print("  2. Wait ~24 hours for tags to appear in AWS Billing > Cost Allocation Tags")
     print("  3. Activate the bedrock:iam-principal:* tags")
     print("  4. View per-developer costs in Cost Explorer")

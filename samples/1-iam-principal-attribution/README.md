@@ -38,6 +38,7 @@ These tags use the `bedrock:iam-principal:` prefix and are set on IAM users or r
 | `1-1_setup_iam_roles.py` | Creates IAM roles for each developer, attaches Bedrock invoke permissions (bedrock-runtime and bedrock-mantle), and tags them with cost allocation attributes |
 | `1-2_invoke_models.py` | Assumes each developer role and makes Bedrock Converse API calls (bedrock-runtime) attributed to the role's tags |
 | `1-3_mantle_invoke_models.py` | Assumes each developer role and makes Responses API calls (bedrock-mantle) attributed to the role's tags |
+| `1-4_openai_runtime.py` | Assumes each developer role and invokes OpenAI models on bedrock-runtime through a different API per role — Converse, Chat Completions, and Responses — all attributed to the role's tags |
 
 Run them in order:
 
@@ -45,13 +46,14 @@ Run them in order:
 python 1-1_setup_iam_roles.py            # Create & tag roles (waits for IAM propagation)
 python 1-2_invoke_models.py              # Invoke models via Converse API (bedrock-runtime)
 python 1-3_mantle_invoke_models.py       # Invoke models via Responses API (bedrock-mantle)
+python 1-4_openai_runtime.py             # Invoke OpenAI models via Converse, Chat Completions & Responses (bedrock-runtime)
 ```
 
 ## Prerequisites
 
 - Python 3.12+
-- IAM credentials with permissions for `iam:TagRole`, `iam:CreateRole`, `iam:PutRolePolicy`, `iam:ListRoleTags`, `sts:AssumeRole`, `bedrock:Converse`, `bedrock-mantle:CreateInference`, and `bedrock-mantle:CallWithBearerToken`
-- Access to Claude or Nova models on Amazon Bedrock (for bedrock-runtime) and OpenAI models (for bedrock-mantle)
+- IAM credentials with permissions for `iam:TagRole`, `iam:CreateRole`, `iam:PutRolePolicy`, `iam:ListRoleTags`, `sts:AssumeRole`, `bedrock:Converse`, `bedrock:CallWithBearerToken`, `bedrock-mantle:CreateInference`, and `bedrock-mantle:CallWithBearerToken`
+- Access to Claude or Nova models on Amazon Bedrock (for bedrock-runtime) and OpenAI models (for bedrock-runtime and bedrock-mantle)
 - Dependencies installed via `pip install -r requirements.txt` from the repository root
 
 ## Viewing Your IAM Roles
