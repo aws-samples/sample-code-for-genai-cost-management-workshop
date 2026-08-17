@@ -1,4 +1,4 @@
-# Track and Optimize Generative AI Spend for Applications, Developers, and Agents on AWS
+# Track and Optimize Generative AI Spend on AWS
 
 ![Workshop Cover](images/cover.png)
 
