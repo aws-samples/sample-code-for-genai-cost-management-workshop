@@ -28,6 +28,7 @@ services:
       SERVER_ROOT_PATH: "/litellm"
       DATABASE_URL: "postgresql://litellm:litellm@db:5432/litellm"
       AWS_REGION_NAME: "us-east-1"
+      LITELLM_DISABLE_NO_REDIS_WARNING: "true"
     env_file:
       - .env
     command: ["--config", "/app/config.yaml", "--port", "4000"]
