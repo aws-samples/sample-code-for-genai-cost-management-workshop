@@ -95,8 +95,6 @@ BEDROCK_INVOKE_POLICY = json.dumps({
             "Action": [
                 "bedrock:InvokeModel",
                 "bedrock:InvokeModelWithResponseStream",
-                "bedrock:Converse",
-                "bedrock:ConverseStream",
                 "bedrock:CallWithBearerToken",
             ],
             "Resource": "*",

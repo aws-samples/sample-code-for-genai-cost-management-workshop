@@ -52,7 +52,7 @@ python 1-4_openai_runtime.py             # Invoke OpenAI models via Converse, Ch
 ## Prerequisites
 
 - Python 3.12+
-- IAM credentials with permissions for `iam:TagRole`, `iam:CreateRole`, `iam:PutRolePolicy`, `iam:ListRoleTags`, `sts:AssumeRole`, `bedrock:Converse`, `bedrock:CallWithBearerToken`, `bedrock-mantle:CreateInference`, and `bedrock-mantle:CallWithBearerToken`
+- IAM credentials with permissions for `iam:TagRole`, `iam:CreateRole`, `iam:PutRolePolicy`, `iam:ListRoleTags`, `sts:AssumeRole`, `bedrock:InvokeModel`, `bedrock:InvokeModelWithResponseStream`, `bedrock:CallWithBearerToken`, `bedrock-mantle:CreateInference`, and `bedrock-mantle:CallWithBearerToken`
 - Access to Claude or Nova models on Amazon Bedrock (for bedrock-runtime) and OpenAI models (for bedrock-runtime and bedrock-mantle)
 - Dependencies installed via `pip install -r requirements.txt` from the repository root
 
