@@ -12,7 +12,7 @@ As organizations scale their generative AI workloads on [Amazon Bedrock](https:/
 
 This workshop provides hands-on experience with six AWS-native cost attribution mechanisms plus LiteLLM as a third-party option. You'll learn to implement each mechanism, combine them for real-world scenarios, and build cost dashboards for operational visibility.
 
-For a detailed introduction to the concepts covered in this workshop, see the companion blog post: [Track and Optimize Generative AI Spend for Applications, Developers, and Agents on AWS](https://builder.aws.com/content/3EtxvhTvYLq48nhi2ClrYaYpQZH/track-and-optimize-generative-ai-spend-for-applications-developers-and-agents-on-aws).
+For a detailed, hands-on walkthrough of the concepts covered here, see the companion workshop: [Track and Optimize Generative AI Spend on AWS](https://catalog.workshops.aws/track-genai-spend-on-aws).
 
 ## The Challenge
 
