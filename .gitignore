@@ -1,4 +1,9 @@
 .venv
 .DS_Store
+__pycache__/
 samples/6-litellm/.env
 samples/7-litellm/.env
+samples/1-track/7-litellm/.env
+
+# Temporary source material for the optimize playbook (not part of the samples)
+samples/2-optimize/tmp/
