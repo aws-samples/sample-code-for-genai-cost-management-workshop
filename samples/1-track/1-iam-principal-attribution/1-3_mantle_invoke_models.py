@@ -34,12 +34,10 @@ MANTLE_BASE_URL = f"https://bedrock-mantle.{REGION}.api.aws"
 OPENAI_BASE_URL = f"{MANTLE_BASE_URL}/openai/v1"
 
 # Models used in this sample (bedrock-mantle supports many models via the Responses API):
-#   - openai.gpt-5.6-luna (most capable, advanced coding and reasoning)
-#   - openai.gpt-5.6-terra (frontier reasoning, coding, tool use)
-#   - openai.gpt-5.6-sol (lower latency, cost-effective)
+#   - openai.gpt-5.6-sol (frontier reasoning and agentic coding)
+# Each developer assumes a different IAM role, so costs are attributed per
+# developer even though they share the same model.
 MODELS = {
-    "gpt-5.6-luna": "openai.gpt-5.6-luna",
-    "gpt-5.6-terra": "openai.gpt-5.6-terra",
     "gpt-5.6-sol": "openai.gpt-5.6-sol",
 }
 
@@ -49,14 +47,14 @@ DEVELOPER_TASKS = [
         "role_name": "bedrock-workshop-developer-alice",
         "session": "alice-coding-session",
         "team": "BackendEngineering",
-        "model": MODELS["gpt-5.6-luna"],
+        "model": MODELS["gpt-5.6-sol"],
         "message": "Write a REST API endpoint in Python Flask that handles user authentication with JWT tokens.",
     },
     {
         "role_name": "bedrock-workshop-developer-bob",
         "session": "bob-coding-session",
         "team": "FrontendEngineering",
-        "model": MODELS["gpt-5.6-terra"],
+        "model": MODELS["gpt-5.6-sol"],
         "message": "Write a React component that displays a paginated data table with sorting and filtering.",
     },
     {

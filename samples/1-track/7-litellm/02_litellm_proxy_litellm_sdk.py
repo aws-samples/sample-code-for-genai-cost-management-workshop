@@ -49,7 +49,7 @@ print("=" * 60)
 # Pass tags via the x-litellm-tags header (comma-separated).
 
 response = litellm.completion(
-    model="claude-sonnet-4-6",
+    model="claude-sonnet-5",
     messages=[{"role": "user", "content": "What is Amazon Bedrock? Answer in one sentence."}],
     max_tokens=100,
     extra_headers={
@@ -84,7 +84,7 @@ print("\n" + "=" * 60)
 print("Cost comparison across models (tagged)")
 print("=" * 60)
 
-models = ["claude-haiku-4-5", "claude-sonnet-4-6"]
+models = ["claude-haiku-4-5", "claude-sonnet-5"]
 prompt = [{"role": "user", "content": "What is cloud computing? One sentence."}]
 
 for model in models:

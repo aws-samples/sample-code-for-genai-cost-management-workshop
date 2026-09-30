@@ -39,12 +39,12 @@ bedrock_client = boto3.client("bedrock", region_name=REGION)
 # Use a system-defined inference profile ID as the model source.
 # This demo uses Global cross-region inference profiles for maximum throughput:
 #   - global.amazon.nova-2-lite-v1:0 (Amazon Nova 2 Lite — fast, cost-effective)
-#   - global.anthropic.claude-sonnet-4-6 (Claude Sonnet 4.6 — balanced)
+#   - global.anthropic.claude-sonnet-5 (Claude Sonnet 5 — balanced)
 #   - global.anthropic.claude-haiku-4-5-20251001-v1:0 (Claude Haiku 4.5 — low latency)
 
 MODELS = {
     "nova-2-lite": "arn:aws:bedrock:us-east-1::inference-profile/global.amazon.nova-2-lite-v1:0",
-    "claude-sonnet-4-6": "arn:aws:bedrock:us-east-1::inference-profile/global.anthropic.claude-sonnet-4-6",
+    "claude-sonnet-5": "arn:aws:bedrock:us-east-1::inference-profile/global.anthropic.claude-sonnet-5",
     "claude-haiku-4-5": "arn:aws:bedrock:us-east-1::inference-profile/global.anthropic.claude-haiku-4-5-20251001-v1:0",
 }
 
@@ -179,7 +179,7 @@ def main():
         {
             "name": "PolicyRecommendation_Production",
             "description": "Recommends policy options to customers based on their needs",
-            "model": MODELS["claude-sonnet-4-6"],
+            "model": MODELS["claude-sonnet-5"],
             "tags": {
                 "bedrock:inference-profiles:Application": "PolicyRecommendation",
                 "bedrock:inference-profiles:Environment": "Production",

@@ -4,9 +4,9 @@ model_list:
       model: bedrock/global.amazon.nova-2-lite-v1:0
       aws_region_name: us-east-1
 
-  - model_name: claude-sonnet-4-6
+  - model_name: claude-sonnet-5
     litellm_params:
-      model: bedrock/global.anthropic.claude-sonnet-4-6
+      model: bedrock/global.anthropic.claude-sonnet-5
       aws_region_name: us-east-1
 
   - model_name: claude-haiku-4-5

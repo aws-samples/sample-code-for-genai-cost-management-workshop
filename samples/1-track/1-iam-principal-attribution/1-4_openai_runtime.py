@@ -50,12 +50,10 @@ OPENAI_BASE_URL = f"{BEDROCK_RUNTIME_BASE_URL}/openai/v1"
 # (no on-demand throughput for the bare model ID), so we use the "global."
 # cross-region inference profile IDs, which route to any supported commercial
 # AWS region for maximum throughput:
-#   - global.openai.gpt-5.6-luna (most capable, advanced coding and reasoning)
-#   - global.openai.gpt-5.6-terra (frontier reasoning, coding, tool use)
-#   - global.openai.gpt-5.6-sol (lower latency, cost-effective)
+#   - global.openai.gpt-5.6-sol (frontier reasoning and agentic coding)
+# This sample varies the API surface (Converse, Chat Completions, Responses)
+# per developer rather than the model, so all three route to the same model.
 MODELS = {
-    "gpt-5.6-luna": "global.openai.gpt-5.6-luna",
-    "gpt-5.6-terra": "global.openai.gpt-5.6-terra",
     "gpt-5.6-sol": "global.openai.gpt-5.6-sol",
 }
 
@@ -68,7 +66,7 @@ DEVELOPER_TASKS = [
         "role_name": "bedrock-workshop-developer-alice",
         "session": "alice-coding-session",
         "team": "BackendEngineering",
-        "model": MODELS["gpt-5.6-luna"],
+        "model": MODELS["gpt-5.6-sol"],
         "method": "converse",
         "message": "Write a REST API endpoint in Python Flask that handles user authentication with JWT tokens.",
     },
@@ -76,7 +74,7 @@ DEVELOPER_TASKS = [
         "role_name": "bedrock-workshop-developer-bob",
         "session": "bob-coding-session",
         "team": "FrontendEngineering",
-        "model": MODELS["gpt-5.6-terra"],
+        "model": MODELS["gpt-5.6-sol"],
         "method": "chat_completions",
         "message": "Write a React component that displays a paginated data table with sorting and filtering.",
     },

@@ -31,11 +31,11 @@ ACCOUNT_ID = boto3.client("sts").get_caller_identity()["Account"]
 # Model to use for inference calls
 # Using Global cross-region inference profiles for maximum throughput:
 #   - global.amazon.nova-2-lite-v1:0 (Amazon Nova 2 Lite — fast, cost-effective)
-#   - global.anthropic.claude-sonnet-4-6 (Claude Sonnet 4.6 — balanced)
+#   - global.anthropic.claude-sonnet-5 (Claude Sonnet 5 — balanced)
 #   - global.anthropic.claude-haiku-4-5-20251001-v1:0 (Claude Haiku 4.5 — low latency)
 MODELS = {
     "nova-2-lite": "global.amazon.nova-2-lite-v1:0",
-    "claude-sonnet-4-6": "global.anthropic.claude-sonnet-4-6",
+    "claude-sonnet-5": "global.anthropic.claude-sonnet-5",
     "claude-haiku-4-5": "global.anthropic.claude-haiku-4-5-20251001-v1:0",
 }
 
@@ -44,7 +44,7 @@ DEVELOPER_TASKS = [
     {
         "role_name": "bedrock-workshop-developer-alice",
         "session": "alice-coding-session",
-        "model": MODELS["claude-sonnet-4-6"],
+        "model": MODELS["claude-sonnet-5"],
         "message": "Write a complete REST API in Python Flask with endpoints for user registration, login with JWT tokens, password reset, and profile update. Include input validation, error handling, and docstrings for each endpoint.",
     },
     {

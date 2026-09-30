@@ -83,7 +83,7 @@ The `config.yaml` defines three Bedrock models using cross-region inference prof
 | Alias | Bedrock Model ID |
 |-------|-----------------|
 | `nova-2-lite` | `global.amazon.nova-2-lite-v1:0` |
-| `claude-sonnet-4-6` | `global.anthropic.claude-sonnet-4-6` |
+| `claude-sonnet-5` | `global.anthropic.claude-sonnet-5` |
 | `claude-haiku-4-5` | `global.anthropic.claude-haiku-4-5-20251001-v1:0` |
 
 ## Quick test with curl

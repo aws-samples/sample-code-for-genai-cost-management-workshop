@@ -29,7 +29,7 @@ LOOKBACK_DAYS = 7
 
 # Pricing per 1,000 tokens (USD)
 PRICING = {
-    "global.anthropic.claude-sonnet-4-6": {"input": 0.003, "output": 0.015},
+    "global.anthropic.claude-sonnet-5": {"input": 0.003, "output": 0.015},
     "global.anthropic.claude-haiku-4-5-20251001-v1:0": {"input": 0.001, "output": 0.005},
     "global.amazon.nova-2-lite-v1:0": {"input": 0.0006, "output": 0.0024},
 }

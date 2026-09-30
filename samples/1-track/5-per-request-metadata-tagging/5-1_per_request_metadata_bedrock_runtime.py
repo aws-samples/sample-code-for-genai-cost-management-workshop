@@ -41,7 +41,7 @@ bedrock_runtime = boto3.client("bedrock-runtime", region_name=REGION)
 # Models: Using Global cross-region inference profiles for maximum throughput
 MODELS = {
     "nova-2-lite": "global.amazon.nova-2-lite-v1:0",
-    "claude-sonnet-4-6": "global.anthropic.claude-sonnet-4-6",
+    "claude-sonnet-5": "global.anthropic.claude-sonnet-5",
     "claude-haiku-4-5": "global.anthropic.claude-haiku-4-5-20251001-v1:0",
 }
 
@@ -138,7 +138,7 @@ def demo_per_tenant_converse():
             "message": "Summarize the key points of a quarterly earnings report in 3 bullet points.",
         },
         {
-            "model": MODELS["claude-sonnet-4-6"],
+            "model": MODELS["claude-sonnet-5"],
             "metadata": {
                 "tenant_id": "tenant-globex-inc",
                 "feature": "code-review",
@@ -219,7 +219,7 @@ def demo_agent_steps_converse():
 
     for step in agent_steps:
         result = converse_with_metadata(
-            model_id=MODELS["claude-sonnet-4-6"],
+            model_id=MODELS["claude-sonnet-5"],
             user_message=step["message"],
             metadata=step["metadata"],
             system_prompt="You are a travel planning agent. Be helpful and structured.",
