@@ -12,7 +12,7 @@ The samples are organized by how much work each lever takes to adopt. Start LOW,
 |------|--------|----------------|
 | Low effort | [01-low-effort](01-low-effort/) | One-line changes, parameter tweaks, and short prompt refactors - no new infrastructure |
 | Medium effort | [02-medium-effort](02-medium-effort/) | Architectural moves on well-trodden paths - some app or config change plus modest validation |
-| High effort | [03-high-effort](03-high-effort/) | Compound-AI patterns that add real complexity, earned on evidence (coming soon) |
+| High effort | [03-high-effort](03-high-effort/) | Compound-AI patterns that add real complexity, earned on evidence |
 
 ## Low Effort Samples
 
@@ -40,6 +40,17 @@ The [02-medium-effort](02-medium-effort/) tier has runnable samples today, one p
 | [02-4_batch_inference.py](02-medium-effort/02-4_batch_inference.py) | Batch Inference | A Converse-format JSONL batch job at 50% of the on-demand price |
 
 See the [medium-effort README](02-medium-effort/README.md) for details on each lever, batch-job setup, and model-compatibility notes.
+
+## High Effort Samples
+
+The [03-high-effort](03-high-effort/) tier has runnable samples today:
+
+| Script | Lever | What it demonstrates |
+|--------|-------|----------------------|
+| [03-1_harness_engineering.py](03-high-effort/03-1_harness_engineering.py) | Harness Engineering | A minimal agent loop (call/parse/tool/check-stop) with a turn-budget guardrail, plus a lean-vs-bloated context comparison |
+| [03-2_sub_agent_delegation.py](03-high-effort/03-2_sub_agent_delegation.py) | Sub-Agent Delegation | A cheap Haiku worker digests a large document; the Claude 5 Opus lead reasons over only the summary - ~96% fewer tokens on the pricey model |
+
+Two further levers from the playbook - GEPA/DSPy and Tool Search via MCP Gateway - are covered as concepts rather than runnable samples (they need a training set or provisioned infrastructure). See the [high-effort README](03-high-effort/README.md) for details.
 
 ## Models Used
 
