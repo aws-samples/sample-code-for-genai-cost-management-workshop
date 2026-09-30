@@ -60,23 +60,23 @@ python 1-4_openai_runtime.py             # Invoke OpenAI models via Converse, Ch
 
 After running the sample, you can see the created IAM roles and their tags in the IAM console:
 
-![IAM Principal Roles](../../images/sample-iam-principal-roles.png)
+![IAM Principal Roles](../../../images/sample-iam-principal-roles.png)
 
 Here's an example of the tags applied to a developer role (`bedrock-workshop-developer-alice`):
 
-![IAM Role Tags Example](../../images/iam-role-bedrock-workshop-developer-alice.png)
+![IAM Role Tags Example](../../../images/iam-role-bedrock-workshop-developer-alice.png)
 
 ## Activating Cost Allocation Tags
 
 After ~24 hours from making inference calls, the tags will appear as **inactive** in AWS Billing > Cost Allocation Tags. You need to activate them to start seeing costs grouped by these tags in Cost Explorer.
 
-![Inactive Cost Allocation Tags](../../images/inactive-cost-allocation-tags-iam-principal.png)
+![Inactive Cost Allocation Tags](../../../images/inactive-cost-allocation-tags-iam-principal.png)
 
 ## Viewing Costs in Cost Explorer
 
 After enabling cost allocation tags and continuing to invoke Bedrock models by running this sample code, wait ~24 hours for billing data to populate. You can then browse to Cost Explorer and see the spend per team:
 
-![Cost Explorer IAM Principal Attribution](../../images/Cost_Explorer_IAM_Principal_Attribution.png)
+![Cost Explorer IAM Principal Attribution](../../../images/Cost_Explorer_IAM_Principal_Attribution.png)
 
 ## Querying Costs with Athena (CUR 2.0 Data Exports)
 
@@ -114,9 +114,9 @@ GROUP BY 1, 2, 3
 ORDER BY usage_date DESC, daily_cost DESC;
 ```
 
-![Athena IAM Principal Daily Costs - Query](../../images/Athena-IAM-Principal-Attribution-query1-Input.png)
+![Athena IAM Principal Daily Costs - Query](../../../images/Athena-IAM-Principal-Attribution-query1-Input.png)
 
-![Athena IAM Principal Daily Costs - Results](../../images/Athena-IAM-Principal-Attribution-query1-Output.png)
+![Athena IAM Principal Daily Costs - Results](../../../images/Athena-IAM-Principal-Attribution-query1-Output.png)
 
 ### Query 2: Hourly costs by team (last 72 hours)
 
@@ -136,9 +136,9 @@ GROUP BY 1, 2, 3
 ORDER BY usage_hour DESC, hourly_cost DESC;
 ```
 
-![Athena IAM Principal Hourly Costs - Query](../../images/Athena-IAM-Principal-Attribution-query2-Input.png)
+![Athena IAM Principal Hourly Costs - Query](../../../images/Athena-IAM-Principal-Attribution-query2-Input.png)
 
-![Athena IAM Principal Hourly Costs - Results](../../images/Athena-IAM-Principal-Attribution-query2-Output.png)
+![Athena IAM Principal Hourly Costs - Results](../../../images/Athena-IAM-Principal-Attribution-query2-Output.png)
 
 ### Query 3: Daily costs by cost center and model (last 7 days)
 
@@ -158,6 +158,6 @@ GROUP BY 1, 2, 3
 ORDER BY usage_date DESC, daily_cost DESC;
 ```
 
-![Athena IAM Principal Daily Costs by Cost Center and Model - Query](../../images/Athena-IAM-Principal-Attribution-query3-Input.png)
+![Athena IAM Principal Daily Costs by Cost Center and Model - Query](../../../images/Athena-IAM-Principal-Attribution-query3-Input.png)
 
-![Athena IAM Principal Daily Costs by Cost Center and Model - Results](../../images/Athena-IAM-Principal-Attribution-query3-Output.png)
+![Athena IAM Principal Daily Costs by Cost Center and Model - Results](../../../images/Athena-IAM-Principal-Attribution-query3-Output.png)

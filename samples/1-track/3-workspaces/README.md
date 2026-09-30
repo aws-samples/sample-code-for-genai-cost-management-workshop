@@ -57,13 +57,13 @@ python 3-2_invoke_models.py      # Invoke models through workspaces
 
 After running the sample, you can see the created workspaces in the Bedrock console. Filter by **Status = Active** to view the workspaces and their associated tags:
 
-![Active Workspaces with Tags](../../images/workspaces-sample-active-projects.png)
+![Active Workspaces with Tags](../../../images/workspaces-sample-active-projects.png)
 
 ## Activating Cost Allocation Tags
 
 After ~24 hours from making inference calls through the workspaces, the tags will appear as **inactive** in AWS Billing > Cost Allocation Tags. You need to activate them to start seeing costs grouped by these tags in Cost Explorer.
 
-![Inactive Cost Allocation Tags](../../images/inactive-cost-allocation-tags-workspaces.png)
+![Inactive Cost Allocation Tags](../../../images/inactive-cost-allocation-tags-workspaces.png)
 
 ## Viewing Costs in Cost Explorer
 
@@ -77,7 +77,7 @@ After activating cost allocation tags and continuing to invoke models through wo
 
 You'll see a breakdown of daily costs per team (e.g., CustomerExperience, Tier3Escalation, Tier2Technical, Tier1Support):
 
-![Cost Explorer Workspaces](../../images/Cost_Explorer_workspaces.png)
+![Cost Explorer Workspaces](../../../images/Cost_Explorer_workspaces.png)
 
 ## Querying Costs with Athena (CUR 2.0 Data Exports)
 
@@ -116,9 +116,9 @@ GROUP BY 1, 2, 3, 4
 ORDER BY usage_date DESC, daily_cost DESC;
 ```
 
-![Athena Workspaces Daily Costs - Query](../../images/Athena-Workspaces-query1-Input.png)
+![Athena Workspaces Daily Costs - Query](../../../images/Athena-Workspaces-query1-Input.png)
 
-![Athena Workspaces Daily Costs - Results](../../images/Athena-Workspaces-query1-Output.png)
+![Athena Workspaces Daily Costs - Results](../../../images/Athena-Workspaces-query1-Output.png)
 
 ### Query 2: Hourly costs by team (last 72 hours)
 
@@ -139,6 +139,6 @@ GROUP BY 1, 2, 3, 4
 ORDER BY usage_hour DESC, hourly_cost DESC;
 ```
 
-![Athena Workspaces Hourly Costs - Query](../../images/Athena-Workspaces-query2-Input.png)
+![Athena Workspaces Hourly Costs - Query](../../../images/Athena-Workspaces-query2-Input.png)
 
-![Athena Workspaces Hourly Costs - Results](../../images/Athena-Workspaces-query2-Output.png)
+![Athena Workspaces Hourly Costs - Results](../../../images/Athena-Workspaces-query2-Output.png)

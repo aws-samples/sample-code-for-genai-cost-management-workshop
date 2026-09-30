@@ -57,10 +57,10 @@ python 4-2_invoke_models.py    # Invoke models through projects
 
 After running the sample, you can see the created projects in the Bedrock console. Filter by **Status = Active** to view the projects and their associated tags:
 
-![Active Projects with Tags](../../images/projects-sample-active-projects.png)
+![Active Projects with Tags](../../../images/projects-sample-active-projects.png)
 
 ## Activating Cost Allocation Tags
 
 After ~24 hours from making inference calls through the projects, the tags will appear as **inactive** in AWS Billing > Cost Allocation Tags. You need to activate them to start seeing costs grouped by these tags in Cost Explorer.
 
-![Inactive Cost Allocation Tags](../../images/inactive-cost-allocation-tags-projects.png)
+![Inactive Cost Allocation Tags](../../../images/inactive-cost-allocation-tags-projects.png)

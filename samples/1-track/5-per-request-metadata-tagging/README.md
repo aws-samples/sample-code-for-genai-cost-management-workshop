@@ -71,9 +71,9 @@ Model invocation logging records every Bedrock API call (including input/output 
 7. Optionally enable **Text data** and **Image data** logging to capture full request/response content
 8. Click **Save**
 
-![Model Invocation Logging Settings](../../images/model-invocation-logging-1.png)
+![Model Invocation Logging Settings](../../../images/model-invocation-logging-1.png)
 
-![Model Invocation Logging Configuration](../../images/model-invocation-logging-2.png)
+![Model Invocation Logging Configuration](../../../images/model-invocation-logging-2.png)
 
 > **Note:** It may take a few minutes after enabling logging for the first log entries to appear. Once enabled, all subsequent Bedrock API calls in the region will be logged to your chosen destination.
 
@@ -94,9 +94,9 @@ fields @timestamp, identity.arn, requestMetadata.tenant_id as tenant,
 | sort total_output_tokens desc
 ```
 
-![Query 1 Input](../../images/Per-Request-Metadata-Tagging-query1-Input.png)
+![Query 1 Input](../../../images/Per-Request-Metadata-Tagging-query1-Input.png)
 
-![Query 1 Output](../../images/Per-Request-Metadata-Tagging-query1-Output.png)
+![Query 1 Output](../../../images/Per-Request-Metadata-Tagging-query1-Output.png)
 
 Example query — per-task cost breakdown for an agent workflow:
 
@@ -110,6 +110,6 @@ fields @timestamp, requestMetadata.agent_id as agent, requestMetadata.task_id as
 | sort step asc
 ```
 
-![Query 2 Input](../../images/Per-Request-Metadata-Tagging-query2-Input.png)
+![Query 2 Input](../../../images/Per-Request-Metadata-Tagging-query2-Input.png)
 
-![Query 2 Output](../../images/Per-Request-Metadata-Tagging-query2-Output.png)
+![Query 2 Output](../../../images/Per-Request-Metadata-Tagging-query2-Output.png)

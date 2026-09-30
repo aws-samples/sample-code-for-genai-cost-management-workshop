@@ -10,7 +10,9 @@ Sample code for the AWS Workshop: **Track and Optimize Generative AI Spend on AW
 
 As organizations scale their generative AI workloads on [Amazon Bedrock](https://aws.amazon.com/bedrock/), a common challenge emerges: *who is spending what, and where?* Whether you're running multi-tenant applications, enabling developers with [Claude Code](https://docs.anthropic.com/en/docs/claude-code), or deploying autonomous agents with [Amazon Bedrock AgentCore](https://aws.amazon.com/bedrock/agentcore/), you need visibility into how your AI budget is being consumed.
 
-This workshop provides hands-on experience with six AWS-native cost attribution mechanisms plus LiteLLM as a third-party option. You'll learn to implement each mechanism, combine them for real-world scenarios, and build cost dashboards for operational visibility.
+This workshop is organized into two parts. **Track** provides hands-on experience with six AWS-native cost attribution mechanisms plus LiteLLM as a third-party option, so you know *who is spending what, and where*. **Optimize** then shows how to *reduce* that spend using Amazon Bedrock's built-in cost-reduction levers, without sacrificing quality. You'll learn to implement each mechanism, combine them for real-world scenarios, and build cost dashboards for operational visibility.
+
+> The **Track** samples are available today under [`samples/1-track/`](samples/1-track/). The **Optimize** samples ([`samples/2-optimize/`](samples/2-optimize/)) are coming soon.
 
 For a detailed, hands-on walkthrough of the concepts covered here, see the companion workshop: [Track and Optimize Generative AI Spend on AWS](https://catalog.workshops.aws/track-genai-spend-on-aws).
 
@@ -39,15 +41,17 @@ Generative AI spend is uniquely difficult to track:
 
 ```
 cfn/
-└── workshop-stack.yaml               # CloudFormation template for the workshop environment
+└── workshop-stack.yaml                   # CloudFormation template for the workshop environment
 samples/
-├── 1-iam-principal-attribution/      # IAM tagging and per-developer cost tracking
-├── 2-application-inference-profiles/ # Profile creation and traffic routing
-├── 3-workspaces/                     # Workspaces for Anthropic Messages API
-├── 4-projects/                       # Projects for OpenAI Responses API
-├── 5-per-request-metadata-tagging/   # Per-request metadata and log queries
-├── 6-iam-identity-log-attribution/   # Model invocation logging with IAM caller identity
-└── 7-litellm/                        # LiteLLM proxy for multi-provider tracking
+├── 1-track/                              # Cost attribution: who is spending what, and where
+│   ├── 1-iam-principal-attribution/      # IAM tagging and per-developer cost tracking
+│   ├── 2-application-inference-profiles/ # Profile creation and traffic routing
+│   ├── 3-workspaces/                     # Workspaces for Anthropic Messages API
+│   ├── 4-projects/                       # Projects for OpenAI Responses API
+│   ├── 5-per-request-metadata-tagging/   # Per-request metadata and log queries
+│   ├── 6-iam-identity-log-attribution/   # Model invocation logging with IAM caller identity
+│   └── 7-litellm/                        # LiteLLM proxy for multi-provider tracking
+└── 2-optimize/                           # Cost reduction: spend less without sacrificing quality (coming soon)
 ```
 
 ## Prerequisites
@@ -84,7 +88,7 @@ export AWS_REGION="us-east-1"
 
    Follow the instructions in [`cfn/README.md`](cfn/README.md) to deploy the CloudFormation stack.
 
-4. Work through the samples sequentially, or jump to any method independently
+4. Work through the [`samples/1-track/`](samples/1-track/) samples sequentially, or jump to any method independently
 
 ## Learning Objectives
 

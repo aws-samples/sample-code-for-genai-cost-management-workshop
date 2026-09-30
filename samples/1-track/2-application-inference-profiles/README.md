@@ -57,23 +57,23 @@ python 2-2_invoke_models.py              # Invoke models through profiles
 
 After running the sample, you can see the created inference profiles in the Bedrock console:
 
-![Application Inference Profiles](../../images/sample-inference-profiles.png)
+![Application Inference Profiles](../../../images/sample-inference-profiles.png)
 
 Here's an example of the tags applied to an inference profile (`ClaimsProcessingAgent_Production`):
 
-![Inference Profile Tags Example](../../images/application-inference-profile-ClaimsProcessingAgent_Production.png)
+![Inference Profile Tags Example](../../../images/application-inference-profile-ClaimsProcessingAgent_Production.png)
 
 ## Activating Cost Allocation Tags
 
 After ~24 hours from making inference calls through the profiles, the tags will appear as **inactive** in AWS Billing > Cost Allocation Tags. You need to activate them to start seeing costs grouped by these tags in Cost Explorer.
 
-![Inactive Cost Allocation Tags](../../images/inactive-cost-allocation-tags-inference-profiles.png)
+![Inactive Cost Allocation Tags](../../../images/inactive-cost-allocation-tags-inference-profiles.png)
 
 ## Viewing Costs in Cost Explorer
 
 After enabling cost allocation tags and continuing to invoke Bedrock models through inference profiles by running this sample code, wait ~24 hours for billing data to populate. You can then browse to Cost Explorer and see the spend per application:
 
-![Cost Explorer Application Inference Profiles](../../images/Cost_Explorer_Application_Inference_Profiles.png)
+![Cost Explorer Application Inference Profiles](../../../images/Cost_Explorer_Application_Inference_Profiles.png)
 
 ## Near Real-Time Visibility with CloudWatch Logs Insights
 
@@ -91,9 +91,9 @@ fields @timestamp, identity.arn, modelId, input.inputTokenCount, output.outputTo
 | sort total_output_tokens desc
 ```
 
-![CloudWatch Logs Insights Query Input](../../images/application-inference-profile-Query1-input.png)
+![CloudWatch Logs Insights Query Input](../../../images/application-inference-profile-Query1-input.png)
 
-![CloudWatch Logs Insights Query Output](../../images/application-inference-profile-Query1-output.png)
+![CloudWatch Logs Insights Query Output](../../../images/application-inference-profile-Query1-output.png)
 
 
 ## Querying Costs with Athena (CUR 2.0 Data Exports)
@@ -133,9 +133,9 @@ GROUP BY 1, 2, 3, 4
 ORDER BY usage_date DESC, daily_cost DESC;
 ```
 
-![Athena Inference Profiles Daily Costs - Query](../../images/Athena-Inference-Profiles-query1-Input.png)
+![Athena Inference Profiles Daily Costs - Query](../../../images/Athena-Inference-Profiles-query1-Input.png)
 
-![Athena Inference Profiles Daily Costs - Results](../../images/Athena-Inference-Profiles-query1-Output.png)
+![Athena Inference Profiles Daily Costs - Results](../../../images/Athena-Inference-Profiles-query1-Output.png)
 
 ### Query 2: Hourly costs by team (last 72 hours)
 
@@ -156,6 +156,6 @@ GROUP BY 1, 2, 3, 4
 ORDER BY usage_hour DESC, hourly_cost DESC;
 ```
 
-![Athena Inference Profiles Hourly Costs - Query](../../images/Athena-Inference-Profiles-query2-Input.png)
+![Athena Inference Profiles Hourly Costs - Query](../../../images/Athena-Inference-Profiles-query2-Input.png)
 
-![Athena Inference Profiles Hourly Costs - Results](../../images/Athena-Inference-Profiles-query2-Output.png)
+![Athena Inference Profiles Hourly Costs - Results](../../../images/Athena-Inference-Profiles-query2-Output.png)
