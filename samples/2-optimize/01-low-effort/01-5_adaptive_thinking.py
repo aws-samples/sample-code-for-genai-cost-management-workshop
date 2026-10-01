@@ -26,7 +26,7 @@ Key points:
 Prerequisites:
 - An AWS account with Amazon Bedrock access
 - IAM credentials with bedrock-runtime:Converse permission
-- Access to Claude 5 Opus on Amazon Bedrock
+- Access to Claude 5 Sonnet on Amazon Bedrock
 - Dependencies installed via: pip install -r requirements.txt
 """
 
@@ -42,9 +42,9 @@ REGION = os.environ.get("AWS_REGION", "us-east-1")
 
 RUNTIME = boto3.client("bedrock-runtime", region_name=REGION)
 
-# Adaptive thinking requires a thinking-capable model. Claude 5 Opus has
-# adaptive thinking on by default.
-OPUS = "global.anthropic.claude-opus-5"
+# Adaptive thinking requires a thinking-capable model. Claude 5 Sonnet supports
+# adaptive thinking.
+SONNET = "global.anthropic.claude-sonnet-5"
 
 # An ambiguous support ticket - the kind of task where more thinking can help.
 TICKET = (
@@ -108,7 +108,7 @@ def demo_effort_sweep() -> None:
 
     rows = []
     for effort in ["low", "medium", "high"]:
-        r = converse_with_effort(OPUS, TICKET, effort)
+        r = converse_with_effort(SONNET, TICKET, effort)
         rows.append((effort, r["output_tokens"], r["latency_ms"]))
 
         print("=" * 70)

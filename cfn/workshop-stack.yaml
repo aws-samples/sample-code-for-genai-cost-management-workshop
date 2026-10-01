@@ -867,8 +867,8 @@ Resources:
                   export AWS_REGION=${AWS::Region}
                   export ANTHROPIC_MODEL=global.anthropic.claude-haiku-4-5-20251001-v1:0
                   export ANTHROPIC_SMALL_FAST_MODEL=global.anthropic.claude-haiku-4-5-20251001-v1:0
-                  export ANTHROPIC_DEFAULT_SONNET_MODEL=global.anthropic.claude-sonnet-4-6
-                  export ANTHROPIC_DEFAULT_OPUS_MODEL=global.anthropic.claude-opus-4-6-v1
+                  export ANTHROPIC_DEFAULT_SONNET_MODEL=global.anthropic.claude-sonnet-5
+                  export ANTHROPIC_DEFAULT_OPUS_MODEL=global.anthropic.claude-sonnet-5
                   export CLAUDE_CODE_SUBAGENT_MODEL=global.anthropic.claude-haiku-4-5-20251001-v1:0
                   EOF
                 - !Sub chown ${CodeEditorUser}:${CodeEditorUser} /home/${CodeEditorUser}/.bashrc
@@ -908,7 +908,7 @@ Resources:
 
                   models = {
                       "nova-2-lite": "global.amazon.nova-2-lite-v1:0",
-                      "claude-sonnet-4-6": "global.anthropic.claude-sonnet-4-6",
+                      "claude-sonnet-5": "global.anthropic.claude-sonnet-5",
                       "claude-haiku-4-5": "global.anthropic.claude-haiku-4-5-20251001-v1:0",
                   }
 

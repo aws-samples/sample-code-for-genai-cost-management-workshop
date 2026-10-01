@@ -19,7 +19,7 @@ only the question and the compressed result.
 You will learn how to:
 - Implement the orchestrator-worker pattern with plain boto3 Converse
 - Run a cheap worker (Haiku) that digests a large document into a short summary
-- Keep the strong lead (Claude 5 Opus) reasoning over only the compact summary
+- Keep the strong lead (Claude 5 Sonnet) reasoning over only the compact summary
 - Compare the lead's input tokens against a single-agent baseline that ingests
   the whole document itself
 
@@ -32,7 +32,7 @@ exceeds that overhead.
 Prerequisites:
 - An AWS account with Amazon Bedrock access
 - IAM credentials with bedrock-runtime:Converse permission
-- Access to Claude Haiku 4.5 and Claude 5 Opus on Amazon Bedrock
+- Access to Claude Haiku 4.5 and Claude 5 Sonnet on Amazon Bedrock
 - Dependencies installed via: pip install -r requirements.txt
 """
 
@@ -48,7 +48,7 @@ REGION = os.environ.get("AWS_REGION", "us-east-1")
 RUNTIME = boto3.client("bedrock-runtime", region_name=REGION)
 
 # Strong lead, cheap worker - the whole point of the split.
-LEAD = "global.anthropic.claude-opus-5"
+LEAD = "global.anthropic.claude-sonnet-5"
 WORKER = "global.anthropic.claude-haiku-4-5-20251001-v1:0"
 
 
@@ -87,7 +87,7 @@ def supports_temperature(model_id: str) -> bool:
 def extract_text(message: dict, stop_reason: str = "") -> str:
     """Return the text answer, skipping any reasoning block.
 
-    Thinking-capable models (Claude 5 Opus) return a reasoningContent block
+    Thinking-capable models (Claude 5 Sonnet) return a reasoningContent block
     before the text block, so content[0] is not necessarily the answer. If the
     model hit the token budget while still reasoning (stopReason 'max_tokens'),
     it may emit no text block at all - return a clear note so the demo output is
@@ -153,7 +153,7 @@ def delegated(document: str, question: str) -> dict:
         f"QUESTION: {question}\n\n"
         f"RESEARCH SUMMARY:\n{worker_out['text']}"
     )
-    # Opus 5 has adaptive thinking on by default; give room for reasoning + answer.
+    # Claude 5 Sonnet supports adaptive thinking; give room for reasoning + answer.
     lead_out = converse(LEAD, lead_prompt, max_tokens=2048)
 
     return {
@@ -171,7 +171,7 @@ def single_agent(document: str, question: str) -> dict:
         f"QUESTION: {question}\n\n"
         f"DOCUMENT:\n{document}"
     )
-    # Opus 5 has adaptive thinking on by default; reading the whole document
+    # Claude 5 Sonnet supports adaptive thinking; reading the whole document
     # takes more reasoning, so allow a large budget for reasoning + answer.
     out = converse(LEAD, prompt, max_tokens=8192)
     return {"answer": out["text"], "lead_input_tokens": out["input_tokens"]}
@@ -189,12 +189,12 @@ def demo_delegation() -> None:
     print("--- Sub-Agent Delegation: keep the heavy context off the strong model ---")
     print(f"  Source document is ~{approx_tokens} tokens.\n")
 
-    print("BASELINE: single strong agent (Opus) reads the whole document")
+    print("BASELINE: single strong agent (Sonnet) reads the whole document")
     base = single_agent(document, question)
     print(f"  lead input tokens: {base['lead_input_tokens']}")
     print(f"  answer: {base['answer'][:200]}\n")
 
-    print("DELEGATED: Haiku worker digests the document, Opus lead reads only the summary")
+    print("DELEGATED: Haiku worker digests the document, Sonnet lead reads only the summary")
     dele = delegated(document, question)
     print(f"  worker input tokens (cheap model): {dele['worker_input_tokens']}")
     print(f"  lead input tokens (expensive model): {dele['lead_input_tokens']}")
