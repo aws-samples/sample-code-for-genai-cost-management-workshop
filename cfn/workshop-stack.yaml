@@ -38,6 +38,10 @@ Parameters:
     Description: Remote repo URL to clone. To not clone a remote repo, leave blank
     Type: String
     Default: ''
+  RepoBranch:
+    Description: Branch to check out from the cloned repo. Leave blank to use the repo default branch
+    Type: String
+    Default: ''
   AssetZipS3Path:
     Description: S3 path holding the asset zip file to be copied into the home folder. To not include any assets, leave blank
     Type: String
@@ -82,6 +86,7 @@ Metadata:
           - DevServerBasePath
           - DevServerPort
           - RepoUrl
+          - RepoBranch
           - AssetZipS3Path
           - BranchZipS3Path
           - FolderZipS3Path
@@ -104,6 +109,8 @@ Metadata:
         default: Application port
       RepoUrl:
         default: Git repo URL
+      RepoBranch:
+        default: Git repo branch
       AssetZipS3Path:
         default: Asset file S3 path
       BranchZipS3Path:
@@ -496,7 +503,11 @@ Resources:
                     echo "No Repo"
                   else
                     mkdir -p ${HomeFolder} && chown -R ${CodeEditorUser}:${CodeEditorUser} ${HomeFolder}
-                    sudo -u ${CodeEditorUser} git clone ${RepoUrl} ${HomeFolder}
+                    if [[ -z "${RepoBranch}" ]]; then
+                      sudo -u ${CodeEditorUser} git clone ${RepoUrl} ${HomeFolder}
+                    else
+                      sudo -u ${CodeEditorUser} git clone --branch ${RepoBranch} ${RepoUrl} ${HomeFolder}
+                    fi
                   fi
           - name: InstallDocker
             action: aws:runShellScript
@@ -535,7 +546,7 @@ Resources:
                 - set -euo pipefail
                 - !Sub |
                   sudo -u ${CodeEditorUser} --login bash <<'SCRIPT'
-                  cd ${HomeFolder}/samples/7-litellm
+                  cd ${HomeFolder}/samples/1-track/7-litellm
                   cp .env.example .env
                   aws configure export-credentials --format env-no-export > .env
                   docker compose up -d
