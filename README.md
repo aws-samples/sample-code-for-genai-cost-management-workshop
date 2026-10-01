@@ -10,7 +10,9 @@ Sample code for the AWS Workshop: **Track and Optimize Generative AI Spend on AW
 
 As organizations scale their generative AI workloads on [Amazon Bedrock](https://aws.amazon.com/bedrock/), a common challenge emerges: *who is spending what, and where?* Whether you're running multi-tenant applications, enabling developers with [Claude Code](https://docs.anthropic.com/en/docs/claude-code), or deploying autonomous agents with [Amazon Bedrock AgentCore](https://aws.amazon.com/bedrock/agentcore/), you need visibility into how your AI budget is being consumed.
 
-This workshop provides hands-on experience with six AWS-native cost attribution mechanisms plus LiteLLM as a third-party option. You'll learn to implement each mechanism, combine them for real-world scenarios, and build cost dashboards for operational visibility.
+This workshop is organized into two parts. **Track** provides hands-on experience with six AWS-native cost attribution mechanisms plus LiteLLM as a third-party option, so you know *who is spending what, and where*. **Optimize** then shows how to *reduce* that spend using Amazon Bedrock's built-in cost-reduction levers, without sacrificing quality. You'll learn to implement each mechanism, combine them for real-world scenarios, and build cost dashboards for operational visibility.
+
+> The **Track** samples live under [`samples/1-track/`](samples/1-track/) and the **Optimize** samples under [`samples/2-optimize/`](samples/2-optimize/), the latter organized into low-, medium-, and high-effort tiers.
 
 For a detailed, hands-on walkthrough of the concepts covered here, see the companion workshop: [Track and Optimize Generative AI Spend on AWS](https://catalog.workshops.aws/track-genai-spend-on-aws).
 
@@ -35,19 +37,34 @@ Generative AI spend is uniquely difficult to track:
 | IAM Identity Log Attribution | bedrock-runtime | Near real-time | Token counts | Per identity |
 | LiteLLM (third-party) | Proxy layer | Real-time | Estimated cost | Per request |
 
+## Optimization Levers Covered
+
+Once you can see where spend goes, the optimize samples show how to reduce it, organized by how much work each lever takes to adopt:
+
+| Tier | Levers |
+|------|--------|
+| Low effort | Model selection, prompt design, parameter tuning, prompt caching, adaptive thinking |
+| Medium effort | LLM routing, Bedrock Guardrails, RAG / indexing, batch inference |
+| High effort | Harness engineering, sub-agent delegation |
+
 ## Repository Structure
 
 ```
 cfn/
-└── workshop-stack.yaml               # CloudFormation template for the workshop environment
+└── workshop-stack.yaml                   # CloudFormation template for the workshop environment
 samples/
-├── 1-iam-principal-attribution/      # IAM tagging and per-developer cost tracking
-├── 2-application-inference-profiles/ # Profile creation and traffic routing
-├── 3-workspaces/                     # Workspaces for Anthropic Messages API
-├── 4-projects/                       # Projects for OpenAI Responses API
-├── 5-per-request-metadata-tagging/   # Per-request metadata and log queries
-├── 6-iam-identity-log-attribution/   # Model invocation logging with IAM caller identity
-└── 7-litellm/                        # LiteLLM proxy for multi-provider tracking
+├── 1-track/                              # Cost attribution: who is spending what, and where
+│   ├── 1-iam-principal-attribution/      # IAM tagging and per-developer cost tracking
+│   ├── 2-application-inference-profiles/ # Profile creation and traffic routing
+│   ├── 3-workspaces/                     # Workspaces for Anthropic Messages API
+│   ├── 4-projects/                       # Projects for OpenAI Responses API
+│   ├── 5-per-request-metadata-tagging/   # Per-request metadata and log queries
+│   ├── 6-iam-identity-log-attribution/   # Model invocation logging with IAM caller identity
+│   └── 7-litellm/                        # LiteLLM proxy for multi-provider tracking
+└── 2-optimize/                           # Cost reduction: spend less without sacrificing quality
+    ├── 01-low-effort/                    # Model selection, prompt design, tuning, caching, adaptive thinking
+    ├── 02-medium-effort/                 # LLM routing, guardrails, RAG/indexing, batch inference
+    └── 03-high-effort/                   # Harness engineering, sub-agent delegation
 ```
 
 ## Prerequisites
@@ -84,7 +101,7 @@ export AWS_REGION="us-east-1"
 
    Follow the instructions in [`cfn/README.md`](cfn/README.md) to deploy the CloudFormation stack.
 
-4. Work through the samples sequentially, or jump to any method independently
+4. Work through the [`samples/1-track/`](samples/1-track/) samples to learn attribution, then the [`samples/2-optimize/`](samples/2-optimize/) samples to reduce spend - sequentially, or jump to any method independently
 
 ## Learning Objectives
 
@@ -98,6 +115,7 @@ By the end of this workshop, you will be able to:
 6. Attribute costs for Amazon AgentCore agent workloads across tasks and sessions
 7. Combine multiple attribution methods for complete cost visibility
 8. Build cost dashboards using Cost Explorer, CUR 2.0, and QuickSight
+9. Reduce spend with Bedrock cost-optimization levers - model selection, prompt design and caching, routing, guardrails, RAG, batch inference, and agent-harness patterns
 
 ## Target Audience
 
