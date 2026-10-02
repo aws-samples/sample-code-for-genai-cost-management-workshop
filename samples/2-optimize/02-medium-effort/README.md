@@ -19,7 +19,7 @@ The samples use the workshop's allowed models via Global cross-region inference 
 
 | Script | Lever | What it demonstrates |
 |--------|-------|----------------------|
-| `02-1_llm_routing.py` | LLM Routing | A tiny, deterministic Haiku classifier labels each query simple/complex, then routes simple lookups to Haiku and complex ones to Claude 5 Sonnet |
+| `02-1_llm_routing.py` | LLM Routing | Labels each query simple/complex to route simple lookups to Haiku and complex ones to Claude 5 Sonnet - and compares two ways to make that call: a tiny Haiku LLM classifier vs the local Strands Decider decision model |
 | `02-2_bedrock_guardrails.py` | Bedrock Guardrails | Creates a guardrail (denied topic + PII), applies it inline on a Converse call and standalone via `ApplyGuardrail`, then deletes it - blocked traffic never pays for inference |
 | `02-3_rag_indexing.py` | RAG / Indexing | Sends the relevant slice of a catalog instead of the whole thing - naive full-catalog prompt vs loading only the relevant category, comparing input tokens |
 | `02-4_batch_inference.py` | Batch Inference | Builds a Converse-format JSONL batch and submits a `create_model_invocation_job` (50% of on-demand price) - live when configured, demo otherwise |
@@ -37,9 +37,16 @@ python 02-4_batch_inference.py
 
 ### 1. LLM Routing
 
-Query complexity has a long tail: only ~20% of requests genuinely need a workhorse model; the rest are lookups a smaller model answers just as well at a fraction of the cost. A tiny classifier labels each request, then routes it to the cheapest model that can handle it. Keep the classifier tiny and deterministic (low `maxTokens`, a stop sequence, cache its static prompt), and make sure the cheap path takes the majority of traffic. Confirm routed-down quality on your own eval set.
+Query complexity has a long tail: only ~20% of requests genuinely need a workhorse model; the rest are lookups a smaller model answers just as well at a fraction of the cost. A classifier labels each request, then routes it to the cheapest model that can handle it. Keep the classifier cheap and deterministic (low `maxTokens`, a stop sequence, cache its static prompt), and make sure the cheap path takes the majority of traffic. Confirm routed-down quality on your own eval set.
 
-> This sample uses a direct Converse call as the answering step to stay self-contained (no extra dependencies). In the source notebook the answering model is a tool-backed agent - the routing logic is the same lever either way.
+The sample implements the routing *decision* two ways and compares them on latency and cost:
+
+- **LLM classifier** (`run_llm_classification`) - a tiny, deterministic Haiku Converse round-trip. Few-shot examples pin the output to one word and a stop sequence ends generation right after it, so it costs only a few output tokens per request.
+- **Decision model** (`run_decider_classification`) - [Strands Decider 2B](https://strandsagents.com/blog/introducing-strands-decider/), a small open-source "system one" model that runs locally and picks between options with a *calibrated confidence* on every answer. The routing decision never touches Bedrock, so it costs no Bedrock tokens, and the confidence lets you escalate low-confidence decisions to the bigger model - something a bare label cannot do.
+
+The decision model is served locally over HTTP (`POST /v1/systemone`). Serving it loads the 1.9B model once and keeps it warm, so each query pays only the real decision latency rather than a per-call model reload. The sample manages that server for you: `start_decider_server` launches `strands-decider serve` as a child process and waits until it is ready, and `stop_decider_server` shuts it down when the comparison finishes (an already-running server at `DECIDER_URL` is reused instead). If the `strands-decider` CLI is not installed, the sample skips the decision-model path and still runs the LLM classifier.
+
+> This sample isolates the routing *decision* only - there is no answering step. In the source notebook the answering model is a tool-backed agent; the routing logic is the same lever either way.
 
 ### 2. Bedrock Guardrails
 
@@ -63,6 +70,7 @@ For work that is not latency sensitive - embeddings, entity extraction, LLM-as-j
 - Access to Claude Haiku 4.5 and Claude 5 Sonnet on Amazon Bedrock
 - Dependencies installed via `pip install -r requirements.txt` from the repository root
 - `AWS_REGION` set (defaults to `us-east-1` if unset)
+- OPTIONAL, for the decision-model path in `02-1_llm_routing.py`: `pip install strands-decider`. This installs the Python package only; the ~1.9B model weights are downloaded separately from Hugging Face into `~/.cache/huggingface/` the first time the server starts (not during `pip install`), so expect a one-time delay on that first run. It runs on CPU, GPU, or Apple silicon. The sample starts and stops the server itself and skips this path cleanly if the CLI is absent.
 
 ## Running the Batch Inference Sample
 
@@ -75,6 +83,17 @@ python 02-4_batch_inference.py
 ```
 
 Without them it prints the sample records and the exact API call it would make, then exits cleanly - so you can inspect the format without provisioning S3 or an IAM role. A live batch job runs asynchronously (minutes to hours) and has a minimum record count (commonly 100 records per job).
+
+## Running the Decision-Model Comparison
+
+`02-1_llm_routing.py` always runs the LLM-classifier approach against Bedrock. It also runs the Strands Decider approach when the model is installed:
+
+```bash
+pip install strands-decider
+python 02-1_llm_routing.py
+```
+
+The script starts the Decider server itself (first run downloads the ~1.9B model, which is slow once), runs both approaches on the same queries, prints the latency and Bedrock-cost comparison, then stops the server. If `strands-decider` is not installed it prints how to enable the path and runs the LLM classifier only. Override the port with `DECIDER_PORT` (default `8099`), or point at an external server with `DECIDER_URL`. The decision model needs local hardware to be useful; it runs on CPU but is fastest on a GPU or Apple silicon.
 
 ## Model Compatibility Note
 
