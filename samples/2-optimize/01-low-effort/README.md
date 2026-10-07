@@ -25,6 +25,7 @@ All samples use the workshop's allowed models via Global cross-region inference 
 | `01-3_parameter_tuning.py` | Parameter Tuning | `max_tokens` (the TPM quota reserved up front), `stop_sequences` (early termination), and `temperature` (determinism vs variation) |
 | `01-4_prompt_caching.py` | Prompt Caching | Caches a large static prefix with a `cachePoint` marker, showing a cache write on the first call and a cache read (billed ~0.1x) on the second |
 | `01-5_adaptive_thinking.py` | Adaptive Thinking | Sweeps `effort` levels (low / medium / high) on Claude 5 Opus, showing how reasoning (output) tokens and latency scale with effort |
+| `01-6_service_tiers.py` | Service Tiers (Flex) | Runs the same summarization task on Standard (`default`) vs Flex tier, comparing latency and tokens and showing the resolved tier; Flex trades latency for a pricing discount |
 
 Run any script directly:
 
@@ -34,6 +35,7 @@ python 01-2_prompt_design.py
 python 01-3_parameter_tuning.py
 python 01-4_prompt_caching.py
 python 01-5_adaptive_thinking.py
+python 01-6_service_tiers.py
 ```
 
 ## The Levers
@@ -58,12 +60,17 @@ Requests that resend the same system prompt, tool definitions, or reference docu
 
 Set an `effort` level and the model decides, per request, how much to reason before answering. It is both a quality lever (think when it helps) and a cost/latency lever (don't pay when it doesn't). The practical pattern is to step down from the default `high` once an eval shows a lower level holds quality.
 
+### 6. Service Tiers (Flex)
+
+Amazon Bedrock offers four service tiers: Reserved, Priority, Standard (the default), and Flex. For latency-tolerant workloads - model evaluations, content summarization, agentic/batch jobs - the Flex tier earns a pricing discount versus the Standard on-demand price. It is a one-parameter change: set `service_tier` to `flex` (passed through Converse via `additionalModelRequestFields`). Your on-demand quota is shared across the priority, default, and flex tiers, while Reserved capacity is separate. The discount is a billing effect you confirm in Cost Explorer; the request-time tradeoff is higher or more variable latency. Monitor the `ResolvedServiceTier` dimension in CloudWatch to see the tier that actually served each request, since it can differ from the one you requested.
+
 ## Model Compatibility Notes
 
 Two behaviors of the Claude 5 models affect these samples (and are worth knowing before you reuse the code):
 
 - **`temperature` is deprecated on Claude 5 Sonnet and Opus.** Supplying it returns `ValidationException: temperature is deprecated for this model`. The samples omit `temperature` for those models and keep it only for Haiku 4.5 (which is why the parameter-tuning demo runs on Haiku).
 - **Native structured output is not accepted by Claude 5 Sonnet.** The `outputConfig` / JSON-schema path returns `ValidationException: output_config.format: Extra inputs are not permitted` on Sonnet 5, so `01-2` runs that specific demo on Haiku 4.5. When you need a schema guarantee on a thinking-capable Claude 5 model, use tool use (forced tool call) instead.
+- **Flex tier availability varies by model and region.** Not every model/region supports the Flex `service_tier`, so `01-6` guards the Flex call and falls back gracefully if it is rejected. Check "Models at a glance" for each model's supported tiers.
 
 ## Prerequisites
 
