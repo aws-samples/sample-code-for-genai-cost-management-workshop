@@ -38,6 +38,7 @@ The [02-medium-effort](02-medium-effort/) tier has runnable samples today, one p
 | [02-2_bedrock_guardrails.py](02-medium-effort/02-2_bedrock_guardrails.py) | Bedrock Guardrails | Inline and standalone `ApplyGuardrail` - blocked traffic never pays for inference |
 | [02-3_rag_indexing.py](02-medium-effort/02-3_rag_indexing.py) | RAG / Indexing | Send only the relevant catalog slice instead of the whole corpus (no vector DB), comparing input tokens |
 | [02-4_batch_inference.py](02-medium-effort/02-4_batch_inference.py) | Batch Inference | A Converse-format JSONL batch job at 50% of the on-demand price |
+| [02-5_service_tiers.py](02-medium-effort/02-5_service_tiers.py) | Service Tiers (Flex) | Same summarization task on Standard vs Flex tier on `openai.gpt-oss-120b`, comparing tokens and latency - Flex trades latency for a pricing discount |
 
 See the [medium-effort README](02-medium-effort/README.md) for details on each lever, batch-job setup, and model-compatibility notes.
 
@@ -54,13 +55,14 @@ Two further levers from the playbook - GEPA/DSPy and Tool Search via MCP Gateway
 
 ## Models Used
 
-The samples use the workshop's allowed models via Global cross-region inference profiles:
+Most samples use the workshop's allowed models via Global cross-region inference profiles; `02-5_service_tiers.py` uses the direct `openai.gpt-oss-120b` model ID because Flex is not served by Claude:
 
 | Alias | Model ID |
 |-------|----------|
 | Haiku 4.5 | `global.anthropic.claude-haiku-4-5-20251001-v1:0` |
 | Claude 5 Sonnet | `global.anthropic.claude-sonnet-5` |
 | Claude 5 Opus | `global.anthropic.claude-opus-5` |
+| OpenAI gpt-oss-120b | `openai.gpt-oss-120b-1:0` |
 
 ## Setup
 
