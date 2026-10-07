@@ -37,12 +37,12 @@ Key points:
 
 Model choice:
 - This workshop otherwise standardizes on a constrained allowed-model list
-  (Nova 2 Lite, Claude Haiku 4.5, Claude 5 Sonnet/Opus, OpenAI GPT-5.6 Sol).
+  (Nova 2 Lite, Claude Haiku 4.5, Claude 5 Sonnet).
   None of those support the Flex tier today. This sample uses
   openai.gpt-oss-120b precisely BECAUSE it is one of the models that serves
   Flex. The Flex/Priority launch set is OpenAI gpt-oss (20b/120b), DeepSeek
   V3.1, Qwen3 variants, and Amazon Nova Pro/Premier - not Anthropic Claude and
-  not the lighter Nova/GPT-5.x models.
+  not the lighter Nova models.
 - Support is also region-gated. Check "Models at a glance" for the current,
   authoritative per-model and per-region supported-tier list:
   https://docs.aws.amazon.com/bedrock/latest/userguide/service-tiers-inference.html
@@ -69,7 +69,7 @@ REGION = os.environ.get("AWS_REGION", "us-east-1")
 RUNTIME = boto3.client("bedrock-runtime", region_name=REGION)
 
 # openai.gpt-oss-120b is an OpenAI open-weight model on Bedrock. It is used here
-# because it serves the Flex tier - the allowed workshop Claude/Nova/GPT-5.x
+# because it serves the Flex tier - the allowed workshop Claude/Nova
 # models do not. It is also a reasoning model, so the response carries a
 # reasoningContent block before the answer text block.
 GPT_OSS = "openai.gpt-oss-120b-1:0"
