@@ -13,14 +13,14 @@ The samples use the workshop's allowed models via Global cross-region inference 
 | Alias | Model ID |
 |-------|----------|
 | Haiku 4.5 | `global.anthropic.claude-haiku-4-5-20251001-v1:0` |
-| Claude 5 Opus | `global.anthropic.claude-opus-5` |
+| Claude 5 Sonnet | `global.anthropic.claude-sonnet-5` |
 
 ## Scripts
 
 | Script | Lever | What it demonstrates |
 |--------|-------|----------------------|
 | `03-1_harness_engineering.py` | Harness Engineering | A minimal but real agent loop (call, parse, run tools, check stop) with a turn-budget guardrail, plus a lean-vs-bloated context comparison showing tokens re-sent every turn |
-| `03-2_sub_agent_delegation.py` | Sub-Agent Delegation | An orchestrator-worker split - a cheap Haiku worker digests a large document, and the expensive Claude 5 Opus lead reasons over only the compact summary - vs a single-agent baseline |
+| `03-2_sub_agent_delegation.py` | Sub-Agent Delegation | An orchestrator-worker split - a cheap Haiku worker digests a large document, and the expensive Claude 5 Sonnet lead reasons over only the compact summary - vs a single-agent baseline |
 
 Run any script directly:
 
@@ -50,10 +50,10 @@ Two levers from the source playbook are documented as concepts rather than runna
 
 - Python 3.12+
 - IAM credentials with `bedrock-runtime:Converse` permission
-- Access to Claude Haiku 4.5 and Claude 5 Opus on Amazon Bedrock
+- Access to Claude Haiku 4.5 and Claude 5 Sonnet on Amazon Bedrock
 - Dependencies installed via `pip install -r requirements.txt` from the repository root
 - `AWS_REGION` set (defaults to `us-east-1` if unset)
 
 ## Model Compatibility Note
 
-Claude 5 Opus has **adaptive thinking on by default**, so its Converse response leads with a `reasoningContent` block before the `text` block - the answer is not `content[0]`. The sub-agent sample extracts the text block explicitly and gives the lead a generous `maxTokens` so reasoning plus the final answer fit within the budget.
+Claude 5 Sonnet is **thinking-capable**, so its Converse response can lead with a `reasoningContent` block before the `text` block - the answer is not necessarily `content[0]`. The sub-agent sample extracts the text block explicitly and gives the lead a generous `maxTokens` so reasoning plus the final answer fit within the budget.

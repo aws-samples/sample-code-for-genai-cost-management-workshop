@@ -24,7 +24,7 @@ The [01-low-effort](01-low-effort/) tier has runnable samples today, one per lev
 | [01-2_prompt_design.py](01-low-effort/01-2_prompt_design.py) | Prompt Design | Clear instructions, few-shot examples, and three structured-output methods |
 | [01-3_parameter_tuning.py](01-low-effort/01-3_parameter_tuning.py) | Parameter Tuning | `max_tokens` TPM reservation, `stop_sequences`, and `temperature` |
 | [01-4_prompt_caching.py](01-low-effort/01-4_prompt_caching.py) | Prompt Caching | `cachePoint` on a large static prefix - cache write then cache read at ~0.1x |
-| [01-5_adaptive_thinking.py](01-low-effort/01-5_adaptive_thinking.py) | Adaptive Thinking | Sweeps `effort` levels on Claude 5 Opus, showing reasoning-token and latency scaling |
+| [01-5_adaptive_thinking.py](01-low-effort/01-5_adaptive_thinking.py) | Adaptive Thinking | Sweeps `effort` levels on Claude 5 Sonnet, showing reasoning-token and latency scaling |
 
 See the [low-effort README](01-low-effort/README.md) for details on each lever and model-compatibility notes.
 
@@ -49,7 +49,7 @@ The [03-high-effort](03-high-effort/) tier has runnable samples today:
 | Script | Lever | What it demonstrates |
 |--------|-------|----------------------|
 | [03-1_harness_engineering.py](03-high-effort/03-1_harness_engineering.py) | Harness Engineering | A minimal agent loop (call/parse/tool/check-stop) with a turn-budget guardrail, plus a lean-vs-bloated context comparison |
-| [03-2_sub_agent_delegation.py](03-high-effort/03-2_sub_agent_delegation.py) | Sub-Agent Delegation | A cheap Haiku worker digests a large document; the Claude 5 Opus lead reasons over only the summary - ~96% fewer tokens on the pricey model |
+| [03-2_sub_agent_delegation.py](03-high-effort/03-2_sub_agent_delegation.py) | Sub-Agent Delegation | A cheap Haiku worker digests a large document; the Claude 5 Sonnet lead reasons over only the summary - ~96% fewer tokens on the pricey model |
 
 Two further levers from the playbook - GEPA/DSPy and Tool Search via MCP Gateway - are covered as concepts rather than runnable samples (they need a training set or provisioned infrastructure). See the [high-effort README](03-high-effort/README.md) for details.
 
@@ -61,7 +61,6 @@ Most samples use the workshop's allowed models via Global cross-region inference
 |-------|----------|
 | Haiku 4.5 | `global.anthropic.claude-haiku-4-5-20251001-v1:0` |
 | Claude 5 Sonnet | `global.anthropic.claude-sonnet-5` |
-| Claude 5 Opus | `global.anthropic.claude-opus-5` |
 | OpenAI gpt-oss-120b | `openai.gpt-oss-120b-1:0` |
 
 ## Setup

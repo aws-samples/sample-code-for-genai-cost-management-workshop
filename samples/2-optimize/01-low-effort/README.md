@@ -14,7 +14,6 @@ All samples use the workshop's allowed models via Global cross-region inference 
 |-------|----------|
 | Haiku 4.5 | `global.anthropic.claude-haiku-4-5-20251001-v1:0` |
 | Claude 5 Sonnet | `global.anthropic.claude-sonnet-5` |
-| Claude 5 Opus | `global.anthropic.claude-opus-5` |
 
 ## Scripts
 
@@ -24,7 +23,7 @@ All samples use the workshop's allowed models via Global cross-region inference 
 | `01-2_prompt_design.py` | Prompt Design | Clear vs vague instructions, zero-shot vs few-shot consistency, and three structured-output methods (prompt-based, tool use, native JSON schema) |
 | `01-3_parameter_tuning.py` | Parameter Tuning | `max_tokens` (the TPM quota reserved up front), `stop_sequences` (early termination), and `temperature` (determinism vs variation) |
 | `01-4_prompt_caching.py` | Prompt Caching | Caches a large static prefix with a `cachePoint` marker, showing a cache write on the first call and a cache read (billed ~0.1x) on the second |
-| `01-5_adaptive_thinking.py` | Adaptive Thinking | Sweeps `effort` levels (low / medium / high) on Claude 5 Opus, showing how reasoning (output) tokens and latency scale with effort |
+| `01-5_adaptive_thinking.py` | Adaptive Thinking | Sweeps `effort` levels (low / medium / high) on Claude 5 Sonnet, showing how reasoning (output) tokens and latency scale with effort |
 
 Run any script directly:
 
@@ -62,13 +61,13 @@ Set an `effort` level and the model decides, per request, how much to reason bef
 
 Two behaviors of the Claude 5 models affect these samples (and are worth knowing before you reuse the code):
 
-- **`temperature` is deprecated on Claude 5 Sonnet and Opus.** Supplying it returns `ValidationException: temperature is deprecated for this model`. The samples omit `temperature` for those models and keep it only for Haiku 4.5 (which is why the parameter-tuning demo runs on Haiku).
+- **`temperature` is deprecated on Claude 5 Sonnet.** Supplying it returns `ValidationException: temperature is deprecated for this model`. The samples omit `temperature` for Sonnet 5 and keep it only for Haiku 4.5 (which is why the parameter-tuning demo runs on Haiku).
 - **Native structured output is not accepted by Claude 5 Sonnet.** The `outputConfig` / JSON-schema path returns `ValidationException: output_config.format: Extra inputs are not permitted` on Sonnet 5, so `01-2` runs that specific demo on Haiku 4.5. When you need a schema guarantee on a thinking-capable Claude 5 model, use tool use (forced tool call) instead.
 
 ## Prerequisites
 
 - Python 3.12+
 - IAM credentials with `bedrock-runtime:Converse` permission
-- Access to Claude Haiku 4.5, Claude 5 Sonnet, and Claude 5 Opus on Amazon Bedrock
+- Access to Claude Haiku 4.5 and Claude 5 Sonnet on Amazon Bedrock
 - Dependencies installed via `pip install -r requirements.txt` from the repository root
 - `AWS_REGION` set (defaults to `us-east-1` if unset)
