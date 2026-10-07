@@ -1,13 +1,15 @@
 """
-Low-Effort Optimization - Lever 07: Service Tiers (Flex)
+Medium-Effort Optimization - Lever 05: Service Tiers (Flex)
 
 Amazon Bedrock offers four service tiers for model inference: Reserved,
-Priority, Standard (the default), and Flex. The low-effort cost lever is Flex:
+Priority, Standard (the default), and Flex. The cost lever here is Flex:
 for workloads that tolerate longer, variable processing times - model
 evaluations, content summarization, labeling/annotation, multistep agentic
 workflows - routing a request to the Flex tier earns a pricing discount versus
-the Standard on-demand price. It is a near-zero-code-change lever: one optional
-request parameter.
+the Standard on-demand price. Adopting it is a workload-routing decision: the
+code change is a single optional request parameter, but you must identify
+latency-tolerant traffic, accept longer and more variable latency on it, and
+validate the tradeoff before rollout.
 
 You will learn how to:
 - Pass service_tier through the Converse API via additionalModelRequestFields
