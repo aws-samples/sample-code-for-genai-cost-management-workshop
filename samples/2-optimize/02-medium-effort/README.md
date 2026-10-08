@@ -24,7 +24,7 @@ The Claude samples use the workshop's allowed models via Global cross-region inf
 | `02-2_bedrock_guardrails.py` | Bedrock Guardrails | Creates a guardrail (denied topic + PII), applies it inline on a Converse call and standalone via `ApplyGuardrail`, then deletes it - blocked traffic never pays for inference |
 | `02-3_rag_indexing.py` | RAG / Indexing | Sends the relevant slice of a catalog instead of the whole thing - naive full-catalog prompt vs loading only the relevant category, comparing input tokens |
 | `02-4_batch_inference.py` | Batch Inference | Builds a Converse-format JSONL batch and submits a `create_model_invocation_job` (50% of on-demand price) - live when configured, demo otherwise |
-| `02-5_service_tiers.py` | Service Tiers (Flex) | Runs the same summarization task on Standard (`default`) vs Flex tier on `openai.gpt-oss-120b`, comparing tokens and latency; the resolved tier is observed via CloudWatch `ResolvedServiceTier` (not returned in the API response), and Flex trades latency for a pricing discount |
+| `02-5_service_tiers.py` | Service Tiers (Flex) | Runs the same summarization task on Standard (`default`) vs Flex tier on `openai.gpt-oss-120b`, comparing tokens and latency via the OpenAI Chat Completions API, which returns the `service_tier` that served each request; Flex trades latency for a pricing discount |
 
 Run any script directly:
 
@@ -65,9 +65,11 @@ For work that is not latency sensitive - embeddings, entity extraction, LLM-as-j
 
 ### 5. Service Tiers (Flex)
 
-Amazon Bedrock offers four service tiers: Reserved, Priority, Standard (the default), and Flex. For latency-tolerant, non-interactive workloads - model evaluations, content summarization, labeling/annotation, multistep agentic workflows - the Flex tier earns a pricing discount versus the Standard on-demand price in exchange for lower priority: during high demand, Flex requests get longer and more variable latency. The code change is small - set `service_tier` to `flex`, passed through Converse via `additionalModelRequestFields` - but adopting it is a workload-routing decision: you identify which traffic can tolerate the latency, route it to Flex, and validate the tradeoff. Your on-demand quota is shared across the priority, default, and flex tiers, while Reserved capacity is separate. The discount is a billing effect you confirm in Cost Explorer, not a per-request number returned by the API; and the tier that actually served each request is NOT in the API response - no field, no header - so observe it via the `ResolvedServiceTier` dimension in CloudWatch (or AWS CloudTrail events).
+Amazon Bedrock offers four service tiers: Reserved, Priority, Standard (the default), and Flex. For latency-tolerant, non-interactive workloads - model evaluations, content summarization, labeling/annotation, multistep agentic workflows - the Flex tier earns a pricing discount versus the Standard on-demand price in exchange for lower priority: during high demand, Flex requests get longer and more variable latency. The code change is small - set `service_tier` to `flex` on the request (the sample uses the OpenAI Chat Completions API on `bedrock-runtime`; Converse accepts it too, via `additionalModelRequestFields`) - but adopting it is a workload-routing decision: you identify which traffic can tolerate the latency, route it to Flex, and validate the tradeoff. Your on-demand quota is shared across the priority, default, and flex tiers, while Reserved capacity is separate. The discount is a billing effect you confirm in Cost Explorer, not a per-request number returned by the API; and the tier that served each request depends on the API you call. Chat Completions returns a top-level `service_tier` field in the response, which is why the sample uses it; Converse returns no tier field at all (no field, no header). For fleet-wide confirmation use the `ResolvedServiceTier` dimension in CloudWatch (or AWS CloudTrail events).
 
 Flex is supported only by a specific model set - OpenAI gpt-oss (20b/120b), DeepSeek V3.1, Qwen3 variants, and Amazon Nova Pro/Premier - NOT Anthropic Claude and NOT the lighter Nova models, which is why this sample runs on `openai.gpt-oss-120b` instead of the workshop Claude models. Availability is also region-gated. Check "Models at a glance" for the current, authoritative per-model and per-region supported-tier list: https://docs.aws.amazon.com/bedrock/latest/userguide/service-tiers-inference.html
+
+The newer OpenAI frontier models do not serve Flex either. GPT-6.1 Sol, GPT-6 Astra/Sol/Luna, and the GPT-5.6 and GPT-5.5 families accept only `service_tier` `default` and reject `flex` and `priority` with a validation error, on Converse, Responses, and Chat Completions alike.
 
 ## Prerequisites
 
@@ -76,7 +78,7 @@ Flex is supported only by a specific model set - OpenAI gpt-oss (20b/120b), Deep
   - Routing & RAG: `bedrock-runtime:Converse`
   - Guardrails: `bedrock:CreateGuardrail`, `bedrock:DeleteGuardrail`, `bedrock-runtime:Converse`, `bedrock-runtime:ApplyGuardrail`
   - Batch inference: `bedrock:CreateModelInvocationJob`, an S3 bucket, and a Bedrock batch service role
-- Access to Claude Haiku 4.5 and Claude 5 Sonnet on Amazon Bedrock, plus `openai.gpt-oss-120b` in a Flex-supporting region for `02-5_service_tiers.py`
+- Access to Claude Haiku 4.5 and Claude 5 Sonnet on Amazon Bedrock, plus `openai.gpt-oss-120b` in a Flex-supporting region for `02-5_service_tiers.py` (which authenticates the OpenAI SDK with a short-lived Bedrock API token minted from your IAM credentials via `aws-bedrock-token-generator`, already in `requirements.txt`)
 - Dependencies installed via `pip install -r requirements.txt` from the repository root
 - `AWS_REGION` set (defaults to `us-east-1` if unset)
 - OPTIONAL, for the decision-model path in `02-1_llm_routing.py`: `pip install strands-decider`. This installs the Python package only; the ~1.9B model weights are downloaded separately from Hugging Face into `~/.cache/huggingface/` the first time the server starts (not during `pip install`), so expect a one-time delay on that first run. It runs on CPU, GPU, or Apple silicon. The sample starts and stops the server itself and skips this path cleanly if the CLI is absent.
@@ -108,4 +110,4 @@ The script starts the Decider server itself (first run downloads the ~1.9B model
 
 `temperature` is deprecated on Claude 5 Sonnet - supplying it returns a `ValidationException`. The samples omit `temperature` on Sonnet 5 calls and keep it only for Haiku 4.5.
 
-Flex tier is supported only by a specific model set - OpenAI gpt-oss, DeepSeek V3.1, Qwen3, and Nova Pro/Premier - not Anthropic Claude or the lighter Nova models, which is why `02-5` runs on `openai.gpt-oss-120b`. Availability is region-gated, so `02-5` guards the Flex call defensively.
+Flex tier is supported only by a specific model set - OpenAI gpt-oss, DeepSeek V3.1, Qwen3, and Nova Pro/Premier - not Anthropic Claude or the lighter Nova models, which is why `02-5` runs on `openai.gpt-oss-120b`. Availability is region-gated, so `02-5` guards the Flex call defensively. `gpt-oss-120b` is a reasoning model: on Chat Completions its reasoning arrives inline in `<reasoning>...</reasoning>` tags before the answer, and the sample strips it.
