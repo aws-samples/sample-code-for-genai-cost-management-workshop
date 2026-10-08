@@ -5,3 +5,5 @@ requests==2.34.2
 openai==2.50.0
 litellm==1.94.0
 strands-decider==0.1.0
+strands-agents[otel]==1.58.0
+aws-opentelemetry-distro==0.21.0

@@ -10,7 +10,7 @@ The samples are organized by how much work each lever takes to adopt. Start LOW,
 
 | Tier | Folder | What it covers |
 |------|--------|----------------|
-| Low effort | [01-low-effort](01-low-effort/) | One-line changes, parameter tweaks, and short prompt refactors - no new infrastructure |
+| Low effort | [01-low-effort](01-low-effort/) | One-line changes, parameter tweaks, and short prompt refactors; the optional AgentCore evaluation sample uses CloudWatch observability |
 | Medium effort | [02-medium-effort](02-medium-effort/) | Architectural moves on well-trodden paths - some app or config change plus modest validation |
 | High effort | [03-high-effort](03-high-effort/) | Compound-AI patterns that add real complexity, earned on evidence |
 
@@ -25,6 +25,7 @@ The [01-low-effort](01-low-effort/) tier has runnable samples today, one per lev
 | [01-3_parameter_tuning.py](01-low-effort/01-3_parameter_tuning.py) | Parameter Tuning | `max_tokens` TPM reservation, `stop_sequences`, and `temperature` |
 | [01-4_prompt_caching.py](01-low-effort/01-4_prompt_caching.py) | Prompt Caching | `cachePoint` on a large static prefix - cache write then cache read at ~0.1x |
 | [01-5_adaptive_thinking.py](01-low-effort/01-5_adaptive_thinking.py) | Adaptive Thinking | Sweeps `effort` levels on Claude 5 Opus, showing reasoning-token and latency scaling |
+| [01-6_strands_summarization.py](01-low-effort/01-6_strands_summarization.py) + [01-7_agentcore_evaluation.py](01-low-effort/01-7_agentcore_evaluation.py) | Agent Evaluation | Run local Strands sessions, report each session’s trace tokens and estimated inference cost, and score the sessions in one AgentCore evaluation |
 
 See the [low-effort README](01-low-effort/README.md) for details on each lever and model-compatibility notes.
 

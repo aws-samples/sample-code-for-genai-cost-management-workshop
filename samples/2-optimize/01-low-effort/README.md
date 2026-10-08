@@ -4,7 +4,7 @@ Cost-and-latency optimization levers that require little or no application chang
 
 ## Overview
 
-Each script is a standalone, runnable demonstration of one lever. They are independent - lift any one into your own application without the others. Every script prints the token, latency, or cost signal that makes the lever's payoff visible, so you can see the effect rather than take it on faith.
+Each sample is a runnable demonstration of one lever. Most are independent and need no new infrastructure. The AgentCore evaluation example uses two scripts and requires CloudWatch observability plus `pricing:DescribeServices`, `pricing:GetAttributeValues`, and `pricing:GetProducts` for its cost estimate.
 
 ## Models Used
 
@@ -25,6 +25,8 @@ All samples use the workshop's allowed models via Global cross-region inference 
 | `01-3_parameter_tuning.py` | Parameter Tuning | `max_tokens` (the TPM quota reserved up front), `stop_sequences` (early termination), and `temperature` (determinism vs variation) |
 | `01-4_prompt_caching.py` | Prompt Caching | Caches a large static prefix with a `cachePoint` marker, showing a cache write on the first call and a cache read (billed ~0.1x) on the second |
 | `01-5_adaptive_thinking.py` | Adaptive Thinking | Sweeps `effort` levels (low / medium / high) on Claude 5 Opus, showing how reasoning (output) tokens and latency scale with effort |
+| `01-6_strands_summarization.py` | Strands Agent | Runs a Bedrock-backed Strands summarization and sentiment agent, reporting tokens and latency with configurable model and adaptive-thinking effort |
+| `01-7_agentcore_evaluation.py` | AgentCore Evaluations | Scores one or more `01-6` sessions, reports per-session trace tokens and cost estimates, and returns aggregate evaluation scores |
 
 Run any script directly:
 
@@ -35,6 +37,39 @@ python 01-3_parameter_tuning.py
 python 01-4_prompt_caching.py
 python 01-5_adaptive_thinking.py
 ```
+
+The AgentCore example is run as a pair. First run the Strands agent under
+OpenTelemetry instrumentation, then evaluate that session:
+
+```bash
+opentelemetry-instrument python 01-6_strands_summarization.py \
+  --session-id summarize-sonnet-high-workshop-run01
+
+python 01-7_agentcore_evaluation.py \
+  --session-ids summarize-sonnet-high-workshop-run01
+```
+
+To compare model or prompt changes in one batch, run `01-6` for each version
+with a distinct session ID, then pass all IDs to `01-7` using `--session-ids`.
+Use `--model-id` to change models and `--effort` to `none`, `low`, `medium`, or
+`high`; `none` disables adaptive thinking for models that do not support it.
+You can also edit `SYSTEM_PROMPT` in the agent script. For example:
+
+```bash
+opentelemetry-instrument python 01-6_strands_summarization.py \
+  --session-id summarize-haiku-low-workshop-run01 \
+  --model-id global.anthropic.claude-haiku-4-5-20251001-v1:0 \
+  --effort none
+
+python 01-7_agentcore_evaluation.py \
+  --session-ids summarize-sonnet-high-workshop-run01 \
+    summarize-haiku-low-workshop-run01
+```
+
+The evaluation script waits for CloudWatch ingestion before submitting the
+batch job; pass `--no-wait` to return the batch job ID without polling for its
+results. The job reports aggregate averages across the selected sessions;
+per-session scores are available in its CloudWatch result logs.
 
 ## The Levers
 
@@ -72,3 +107,55 @@ Two behaviors of the Claude 5 models affect these samples (and are worth knowing
 - Access to Claude Haiku 4.5, Claude 5 Sonnet, and Claude 5 Opus on Amazon Bedrock
 - Dependencies installed via `pip install -r requirements.txt` from the repository root
 - `AWS_REGION` set (defaults to `us-east-1` if unset)
+
+## AgentCore Evaluations setup
+
+The Strands agent runs locally; it does not use Amazon Bedrock AgentCore
+Runtime. AgentCore Evaluations still needs the agent's supported Strands
+telemetry in CloudWatch:
+
+- Enable CloudWatch Transaction Search for the account.
+- Create the CloudWatch log group
+  `/aws/bedrock-agentcore/runtimes/low-effort-summarizer-local`.
+- Configure the CloudWatch Logs resource policy that allows X-Ray to deliver
+  traces to that custom log group.
+- Configure local AgentCore Observability environment variables before using
+  `opentelemetry-instrument`. Set the service name to
+  `LowEffortSummarizer.DEFAULT`, direct traces and logs to the log group above,
+  and enable content capture so evaluation can read prompts and responses.
+- Use AWS credentials with Bedrock model invocation, CloudWatch Logs, and
+  AgentCore batch-evaluation permissions. Batch evaluation runs under the
+  caller's credentials; it does not require an AgentCore Runtime or a separate
+  evaluation service role.
+
+See [AWS: observability for agents hosted outside AgentCore Runtime](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability-configure.html)
+for the CloudWatch Transaction Search, ADOT, environment-variable, and resource
+policy setup. The traces contain the review text and model response because
+AgentCore Evaluations needs that content to score the session.
+
+For a local shell, set the telemetry variables after creating the log group
+and its X-Ray resource policy. AWS credentials should come from the normal
+AWS credential chain, such as an AWS profile:
+
+```bash
+export AWS_ACCOUNT_ID=<your-account-id>
+export AWS_REGION=us-east-1
+export AWS_DEFAULT_REGION="$AWS_REGION"
+
+export AGENT_OBSERVABILITY_ENABLED=true
+export AWS_GENAI_CONTENT_EXTRACTION_OPT_OUT=true
+export OTEL_PYTHON_DISTRO=aws_distro
+export OTEL_PYTHON_CONFIGURATOR=aws_configurator
+export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+export OTEL_TRACES_EXPORTER=otlp
+export OTEL_RESOURCE_ATTRIBUTES=service.name=LowEffortSummarizer.DEFAULT
+export OTEL_EXPORTER_OTLP_TRACES_HEADERS=x-aws-log-group=/aws/bedrock-agentcore/runtimes/low-effort-summarizer-local,x-aws-log-stream=spans
+export OTEL_EXPORTER_OTLP_LOGS_HEADERS=x-aws-log-group=/aws/bedrock-agentcore/runtimes/low-effort-summarizer-local,x-aws-log-stream=agent-logs,x-aws-metric-namespace=bedrock-agentcore
+
+export AGENTCORE_EVAL_SERVICE_NAME=LowEffortSummarizer.DEFAULT
+export AGENTCORE_EVAL_LOG_GROUP=/aws/bedrock-agentcore/runtimes/low-effort-summarizer-local
+```
+
+The agent requires a session ID of at least 33 characters and permits only
+letters, numbers, hyphens, and underscores. AgentCore Runtime has this minimum;
+the local example keeps the same rule so its session IDs remain portable.
