@@ -46,10 +46,6 @@ Model choice:
   Flex. The Flex/Priority launch set is OpenAI gpt-oss (20b/120b), DeepSeek
   V3.1, Qwen3 variants, and Amazon Nova Pro/Premier - not Anthropic Claude and
   not the lighter Nova models.
-- The newer OpenAI frontier models (GPT-6.1 Sol, GPT-6 Astra/Sol/Luna, and the
-  GPT-5.6 and GPT-5.5 families) do not serve Flex either: tested on Converse,
-  Responses, and Chat Completions, they accept only service_tier "default" and
-  reject "flex" and "priority" with a validation error.
 - Support is also region-gated. Check "Models at a glance" for the current,
   authoritative per-model and per-region supported-tier list:
   https://docs.aws.amazon.com/bedrock/latest/userguide/service-tiers-inference.html
