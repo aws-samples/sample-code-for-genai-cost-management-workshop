@@ -69,8 +69,6 @@ Amazon Bedrock offers four service tiers: Reserved, Priority, Standard (the defa
 
 Flex is supported only by a specific model set - OpenAI gpt-oss (20b/120b), DeepSeek V3.1, Qwen3 variants, and Amazon Nova Pro/Premier - NOT Anthropic Claude and NOT the lighter Nova models, which is why this sample runs on `openai.gpt-oss-120b` instead of the workshop Claude models. Availability is also region-gated. Check "Models at a glance" for the current, authoritative per-model and per-region supported-tier list: https://docs.aws.amazon.com/bedrock/latest/userguide/service-tiers-inference.html
 
-The newer OpenAI frontier models do not serve Flex either. GPT-6.1 Sol, GPT-6 Astra/Sol/Luna, and the GPT-5.6 and GPT-5.5 families accept only `service_tier` `default` and reject `flex` and `priority` with a validation error, on Converse, Responses, and Chat Completions alike.
-
 ## Prerequisites
 
 - Python 3.12+
