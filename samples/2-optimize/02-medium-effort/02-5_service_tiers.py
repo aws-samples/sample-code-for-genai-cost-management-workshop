@@ -180,6 +180,7 @@ def compare_tiers() -> None:
     rows.append(std)
     print("=== service_tier=default (Standard) ===")
     print(f"{std['text']}\n")
+    print(f"  Service tier returned in response: {std['served_tier']}\n")
 
     # Flex tier - the expected, happy path on gpt-oss-120b. The try/except is
     # defensive hygiene only: model/region Flex availability can change, so if
@@ -190,6 +191,7 @@ def compare_tiers() -> None:
         rows.append(flex)
         print("=== service_tier=flex ===")
         print(f"{flex['text']}\n")
+        print(f"  Service tier returned in response: {flex['served_tier']}\n")
     except APIStatusError as e:
         print("=== service_tier=flex ===")
         print(
