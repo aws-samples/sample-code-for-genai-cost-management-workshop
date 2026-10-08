@@ -177,7 +177,6 @@ if __name__ == "__main__":
     main()
 
 
-# export AWS_PROFILE=cost
 # export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 # export AWS_REGION=us-east-1
 # export AWS_DEFAULT_REGION="$AWS_REGION"

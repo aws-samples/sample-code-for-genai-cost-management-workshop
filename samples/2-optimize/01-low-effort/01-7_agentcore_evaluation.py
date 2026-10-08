@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 
 import boto3
 
-from util import REGION, report_session_usage, validate_session_id
+from utils import REGION, report_session_usage, validate_session_id
 
 
 SERVICE_NAME = os.environ.get(
