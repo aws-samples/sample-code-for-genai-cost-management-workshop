@@ -81,27 +81,42 @@ def _session_token_counts(logs, session_id):
             output_tokens = int(attributes.get("gen_ai.usage.output_tokens", 0))
         except (TypeError, ValueError):
             continue
+
         if input_tokens or output_tokens:
             token_spans.append(
-                (
-                    attributes.get("gen_ai.operation.name"),
-                    attributes.get("gen_ai.request.model"),
-                    input_tokens,
-                    output_tokens,
-                )
+                {
+                    "operation": attributes.get("gen_ai.operation.name"),
+                    "model": attributes.get("gen_ai.request.model"),
+                    "input_tokens": input_tokens,
+                    "output_tokens": output_tokens,
+                    "span_id": span["spanId"],
+                    "parent_span_id": span.get("parentSpanId"),
+                }
             )
 
-    selected = [span for span in token_spans if span[0] == "chat"]
+    chat_spans = [
+        span for span in token_spans if span["operation"] == "chat"
+    ]
+    chat_span_ids = {span["span_id"] for span in chat_spans}
+    selected = [
+        span
+        for span in chat_spans
+        if span["parent_span_id"] not in chat_span_ids
+    ]
+
     if not selected:
-        selected = [span for span in token_spans if span[0] == "invoke_agent"]
+        selected = [
+            span for span in token_spans
+            if span["operation"] == "invoke_agent"
+        ]
     if not selected:
         selected = token_spans
 
     usage = {}
-    for _, model, input_tokens, output_tokens in selected:
-        totals = usage.setdefault(model or "Unknown model", [0, 0])
-        totals[0] += input_tokens
-        totals[1] += output_tokens
+    for span in selected:
+        totals = usage.setdefault(span["model"] or "Unknown model", [0, 0])
+        totals[0] += span["input_tokens"]
+        totals[1] += span["output_tokens"]
     return usage
 
 
