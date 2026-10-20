@@ -9,10 +9,10 @@ import os
 import time
 import uuid
 from datetime import datetime, timezone
+from botocore.exceptions import BotoCoreError, ClientError
 
 import boto3
-
-from utils import REGION, report_session_usage, validate_session_id
+from utils import REGION, report_session_usage, validate_session_id, delete_observability_log_resources
 
 
 SERVICE_NAME = os.environ.get(
@@ -32,6 +32,7 @@ TERMINAL_STATUSES = {
     "FAILED",
     "STOPPED",
 }
+DELETE_LOGS = False
 
 ASSERTIONS = [
     {
@@ -153,6 +154,9 @@ def main():
         print(f"Evaluation detail: {detail}")
     if status in {"FAILED", "STOPPED", "COMPLETED_WITH_ERRORS"}:
         raise RuntimeError(f"Evaluation finished with status {status}.")
+
+    if DELETE_LOGS:
+        delete_observability_log_resources()
 
 
 if __name__ == "__main__":

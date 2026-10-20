@@ -302,3 +302,15 @@ def report_session_usage(session_id):
         "Estimated input/output inference cost "
         f"(on-demand list price; evaluation excluded): ${cost:.6f}"
     )
+
+
+def delete_observability_log_resources() -> None:
+    
+    logs = boto3.client("logs", region_name=REGION)
+
+    try:
+        logs.delete_log_group(logGroupName=LOG_GROUP_NAME)
+        print(f"Log group {LOG_GROUP_NAME} was deleted successfully")
+    except ClientError as exc:
+        if exc.response.get("Error", {}).get("Code") != "ResourceNotFoundException":
+            raise

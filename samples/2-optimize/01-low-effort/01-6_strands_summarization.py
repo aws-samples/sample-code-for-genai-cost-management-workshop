@@ -26,6 +26,9 @@ from opentelemetry import baggage, context
 from strands import Agent
 from strands.models import BedrockModel
 
+from botocore.exceptions import ClientError
+import boto3
+
 # ============================================================
 # Configuration
 # ============================================================
@@ -35,6 +38,12 @@ DEFAULT_MODEL_ID = "global.anthropic.claude-sonnet-5"
 EFFORT_LEVELS = ("none", "low", "medium", "high")
 MIN_SESSION_ID_LENGTH = 33
 SESSION_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
+LOG_GROUP_NAME = os.environ.get(
+    "AGENTCORE_EVAL_LOG_GROUP",
+    "/aws/bedrock-agentcore/runtimes/low-effort-summarizer-local",
+)
+LOG_STREAM_NAMES = ("agent-logs", "spans")
+LOG_RETENTION_DAYS = 7
 
 EXAMPLE_REVIEW = (
     "I ordered this device because the product page promised reliable "
@@ -90,6 +99,32 @@ def extract_answer(result: Any) -> str:
     )
 
 
+def ensure_observability_log_resources() -> None:
+    logs = boto3.client("logs", region_name=REGION)
+
+    try:
+        logs.create_log_group(logGroupName=LOG_GROUP_NAME)
+    except ClientError as exc:
+        if exc.response.get("Error", {}).get("Code") != "ResourceAlreadyExistsException":
+            raise
+
+    # Match the seven-day retention configured by the workshop stack.
+    logs.put_retention_policy(
+        logGroupName=LOG_GROUP_NAME,
+        retentionInDays=LOG_RETENTION_DAYS,
+    )
+
+    for stream_name in LOG_STREAM_NAMES:
+        try:
+            logs.create_log_stream(
+                logGroupName=LOG_GROUP_NAME,
+                logStreamName=stream_name,
+            )
+        except ClientError as exc:
+            if exc.response.get("Error", {}).get("Code") != "ResourceAlreadyExistsException":
+                raise
+
+
 def parse_args() -> argparse.Namespace:
     """Parse the model, effort, input review, and required trace session ID."""
     parser = argparse.ArgumentParser(
@@ -132,6 +167,9 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     session_id = validate_session_id(args.session_id)
+    
+    # make sure logs resources are ready
+    ensure_observability_log_resources()
 
     additional_request_fields = {}
     if args.effort != "none":

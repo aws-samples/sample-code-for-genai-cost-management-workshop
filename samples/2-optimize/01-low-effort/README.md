@@ -66,10 +66,12 @@ python 01-7_agentcore_evaluation.py \
     summarize-haiku-low-workshop-run01
 ```
 
-The evaluation script waits for CloudWatch ingestion before submitting the
-batch job; pass `--no-wait` to return the batch job ID without polling for its
-results. The job reports aggregate averages across the selected sessions;
-per-session scores are available in its CloudWatch result logs.
+The evaluation script waits 300 seconds for CloudWatch ingestion before
+submitting the batch job. Keep the default wait for fresh sessions; reducing
+it can cause the evaluation to miss spans that have not reached CloudWatch yet.
+After submission, pass `--no-wait` to return the batch job ID without polling
+for its results. The job reports aggregate averages across the selected
+sessions; per-session scores are available in its CloudWatch result logs.
 
 ## The Levers
 
@@ -114,11 +116,13 @@ The Strands agent runs locally; it does not use Amazon Bedrock AgentCore
 Runtime. AgentCore Evaluations still needs the agent's supported Strands
 telemetry in CloudWatch:
 
-- Enable CloudWatch Transaction Search for the account.
-- Create the CloudWatch log group
-  `/aws/bedrock-agentcore/runtimes/low-effort-summarizer-local`.
-- Configure the CloudWatch Logs resource policy that allows X-Ray to deliver
-  traces to that custom log group.
+- The workshop CloudFormation stack creates the CloudWatch log group
+  `/aws/bedrock-agentcore/runtimes/low-effort-summarizer-local` and its
+  `agent-logs` and `spans` streams.
+- Enable CloudWatch Transaction Search. X-Ray's trace-segment destination must
+  be `CloudWatchLogs` and its status must be `ACTIVE`. The workshop stack
+  configures the CloudWatch Logs resource policies X-Ray needs to deliver
+  traces to the custom log group and the Transaction Search log groups.
 - Configure local AgentCore Observability environment variables before using
   `opentelemetry-instrument`. Set the service name to
   `LowEffortSummarizer.DEFAULT`, direct traces and logs to the log group above,
@@ -133,9 +137,11 @@ for the CloudWatch Transaction Search, ADOT, environment-variable, and resource
 policy setup. The traces contain the review text and model response because
 AgentCore Evaluations needs that content to score the session.
 
-For a local shell, set the telemetry variables after creating the log group
-and its X-Ray resource policy. AWS credentials should come from the normal
-AWS credential chain, such as an AWS profile:
+For a local shell in the workshop, set the telemetry variables after the
+workshop stack has finished creating the log group, streams, and resource
+policies. Outside the workshop, create those resources and policies first.
+AWS credentials should come from the normal AWS credential chain, such as an
+AWS profile:
 
 ```bash
 export AWS_ACCOUNT_ID=<your-account-id>
