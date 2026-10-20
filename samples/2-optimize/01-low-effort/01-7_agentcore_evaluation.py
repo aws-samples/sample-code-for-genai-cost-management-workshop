@@ -163,10 +163,6 @@ if __name__ == "__main__":
     main()
 
 
-# export AWS_REGION=us-east-1
-# export AWS_DEFAULT_REGION="$AWS_REGION"
-# export AGENTCORE_EVAL_SERVICE_NAME=LowEffortSummarizer.DEFAULT
-# export AGENTCORE_EVAL_LOG_GROUP=/aws/bedrock-agentcore/runtimes/low-effort-summarizer-local
-# export AGENTCORE_EVAL_SPAN_LOG_STREAM=spans
+# No exports are needed for the default setup; existing environment variables override defaults.
 # python 01-7_agentcore_evaluation.py \
 #   --session-ids summarize-sonnet-high-workshop-run01 summarize-haiku-low-workshop-run01

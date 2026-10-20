@@ -11,7 +11,7 @@ Prerequisites:
 - IAM credentials with bedrock:Converse and CloudWatch telemetry permissions
 - CloudWatch Transaction Search and AgentCore Observability configured
 - Dependencies installed via: pip install -r requirements.txt
-- Run with `opentelemetry-instrument` so Strands traces reach CloudWatch
+- Run with `python`; the script configures OpenTelemetry before loading Strands
 
 A single response is an example, not proof that one configuration is better.
 """
@@ -22,13 +22,6 @@ import re
 import time
 from typing import Any
 
-from opentelemetry import baggage, context
-from strands import Agent
-from strands.models import BedrockModel
-
-from botocore.exceptions import ClientError
-import boto3
-
 # ============================================================
 # Configuration
 # ============================================================
@@ -38,12 +31,40 @@ DEFAULT_MODEL_ID = "global.anthropic.claude-sonnet-5"
 EFFORT_LEVELS = ("none", "low", "medium", "high")
 MIN_SESSION_ID_LENGTH = 33
 SESSION_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
+SERVICE_NAME = os.environ.get(
+    "AGENTCORE_EVAL_SERVICE_NAME", "LowEffortSummarizer.DEFAULT"
+)
 LOG_GROUP_NAME = os.environ.get(
     "AGENTCORE_EVAL_LOG_GROUP",
     "/aws/bedrock-agentcore/runtimes/low-effort-summarizer-local",
 )
-LOG_STREAM_NAMES = ("agent-logs", "spans")
+SPAN_LOG_STREAM = os.environ.get("AGENTCORE_EVAL_SPAN_LOG_STREAM", "spans")
+LOG_STREAM_NAMES = ("agent-logs", SPAN_LOG_STREAM)
 LOG_RETENTION_DAYS = 7
+
+OBSERVABILITY_DEFAULTS = {
+    "AWS_REGION": REGION,
+    "AWS_DEFAULT_REGION": REGION,
+    "AGENT_OBSERVABILITY_ENABLED": "true",
+    "AWS_GENAI_CONTENT_EXTRACTION_OPT_OUT": "true",
+    "OTEL_PYTHON_DISTRO": "aws_distro",
+    "OTEL_PYTHON_CONFIGURATOR": "aws_configurator",
+    # Keep ADOT 0.21's exclusions. ADOT owns logging; Strands owns threading.
+    "OTEL_PYTHON_DISABLED_INSTRUMENTATIONS": (
+        "http,sqlalchemy,psycopg2,pymysql,sqlite3,aiopg,asyncpg,mysql_connector,"
+        "urllib3,requests,system_metrics,google-genai,jinja2,logging,threading"
+    ),
+    "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
+    "OTEL_TRACES_EXPORTER": "otlp",
+    "OTEL_RESOURCE_ATTRIBUTES": f"service.name={SERVICE_NAME}",
+    "OTEL_EXPORTER_OTLP_TRACES_HEADERS": (
+        f"x-aws-log-group={LOG_GROUP_NAME},x-aws-log-stream={SPAN_LOG_STREAM}"
+    ),
+    "OTEL_EXPORTER_OTLP_LOGS_HEADERS": (
+        f"x-aws-log-group={LOG_GROUP_NAME},x-aws-log-stream=agent-logs,"
+        "x-aws-metric-namespace=bedrock-agentcore"
+    ),
+}
 
 EXAMPLE_REVIEW = (
     "I ordered this device because the product page promised reliable "
@@ -74,6 +95,17 @@ Sentiment: <positive, neutral, or negative>
 # Helpers
 # ============================================================
 
+def configure_observability() -> None:
+    """Apply defaults and initialize instrumentation before importing Strands."""
+    for name, default in OBSERVABILITY_DEFAULTS.items():
+        # The SDK reads environment variables; preserve any explicit overrides.
+        os.environ.setdefault(name, default)
+
+    from opentelemetry.instrumentation.auto_instrumentation import initialize
+
+    initialize(swallow_exceptions=False)
+
+
 def validate_session_id(session_id: str) -> str:
     """Validate a descriptive session ID suitable for AgentCore tracing."""
     if len(session_id) < MIN_SESSION_ID_LENGTH:
@@ -100,6 +132,9 @@ def extract_answer(result: Any) -> str:
 
 
 def ensure_observability_log_resources() -> None:
+    import boto3
+    from botocore.exceptions import ClientError
+
     logs = boto3.client("logs", region_name=REGION)
 
     try:
@@ -167,7 +202,13 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     session_id = validate_session_id(args.session_id)
-    
+    configure_observability()
+
+    # Import after instrumentation has read the environment defaults.
+    from opentelemetry import baggage, context
+    from strands import Agent
+    from strands.models import BedrockModel
+
     # make sure logs resources are ready
     ensure_observability_log_resources()
 
@@ -184,7 +225,8 @@ def main() -> None:
         max_tokens=2048,
         additional_request_fields=additional_request_fields,
     )
-    agent = Agent(model=model, system_prompt=SYSTEM_PROMPT)
+    # Print the final answer below instead of also streaming it to the console.
+    agent = Agent(model=model, system_prompt=SYSTEM_PROMPT, callback_handler=None)
 
     # AgentCore Observability uses this baggage value to group spans as a session.
     otel_context = baggage.set_baggage("session.id", session_id)
@@ -215,23 +257,10 @@ if __name__ == "__main__":
     main()
 
 
-# export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-# export AWS_REGION=us-east-1
-# export AWS_DEFAULT_REGION="$AWS_REGION"
-# export AGENT_OBSERVABILITY_ENABLED=true
-# export AWS_GENAI_CONTENT_EXTRACTION_OPT_OUT=true
-# export OTEL_PYTHON_DISTRO=aws_distro
-# export OTEL_PYTHON_CONFIGURATOR=aws_configurator
-# export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
-# export OTEL_TRACES_EXPORTER=otlp
-# export OTEL_RESOURCE_ATTRIBUTES=service.name=LowEffortSummarizer.DEFAULT
-# export OTEL_EXPORTER_OTLP_TRACES_HEADERS="x-aws-log-group=/aws/bedrock-agentcore/runtimes/low-effort-summarizer-local,x-aws-log-stream=spans"
-# export OTEL_EXPORTER_OTLP_LOGS_HEADERS="x-aws-log-group=/aws/bedrock-agentcore/runtimes/low-effort-summarizer-local,x-aws-log-stream=agent-logs,x-aws-metric-namespace=bedrock-agentcore"
-# export AGENTCORE_EVAL_SERVICE_NAME=LowEffortSummarizer.DEFAULT
-# export AGENTCORE_EVAL_LOG_GROUP=/aws/bedrock-agentcore/runtimes/low-effort-summarizer-local
-# export AGENTCORE_EVAL_SPAN_LOG_STREAM=spans
-# opentelemetry-instrument python 01-6_strands_summarization.py \
+# Defaults above replace the exports; existing environment variables override them.
+# Use plain python: instrumentation is initialized inside the script.
+# python 01-6_strands_summarization.py \
 #   --session-id summarize-sonnet-high-workshop-run01
-# opentelemetry-instrument python 01-6_strands_summarization.py \
+# python 01-6_strands_summarization.py \
 #   --session-id summarize-haiku-low-workshop-run01 \
 #   --model-id global.anthropic.claude-haiku-4-5-20251001-v1:0 --effort none
