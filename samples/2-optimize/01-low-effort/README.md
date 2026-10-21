@@ -25,8 +25,7 @@ All samples use the workshop's allowed models via Global cross-region inference 
 | `01-3_parameter_tuning.py` | Parameter Tuning | `max_tokens` (the TPM quota reserved up front), `stop_sequences` (early termination), and `temperature` (determinism vs variation) |
 | `01-4_prompt_caching.py` | Prompt Caching | Caches a large static prefix with a `cachePoint` marker, showing a cache write on the first call and a cache read (billed ~0.1x) on the second |
 | `01-5_adaptive_thinking.py` | Adaptive Thinking | Sweeps `effort` levels (low / medium / high) on Claude 5 Opus, showing how reasoning (output) tokens and latency scale with effort |
-| `01-6_strands_summarization.py` | Strands Agent | Runs a Bedrock-backed Strands summarization and sentiment agent, reporting tokens and latency with configurable model and adaptive-thinking effort |
-| `01-7_agentcore_evaluation.py` | AgentCore Evaluations | Scores one or more `01-6` sessions, reports per-session trace tokens and cost estimates, and returns aggregate evaluation scores |
+| `01-7_agentcore_evaluation.py` | Strands Agent + AgentCore Evaluations | Runs a Bedrock-backed Strands summarization and sentiment agent on Haiku 4.5, Claude 5 Sonnet (low effort), and Claude 5 Sonnet (high effort), scores all three sessions in one AgentCore evaluation, and compares tokens, estimated cost, latency, and evaluation scores |
 
 Run any script directly:
 
@@ -38,49 +37,45 @@ python 01-4_prompt_caching.py
 python 01-5_adaptive_thinking.py
 ```
 
-The AgentCore example is run as a pair. Complete the
-[observability setup](#agentcore-evaluations-setup) first, then run these commands
-from this directory. The Strands script initializes OpenTelemetry automatically;
-no environment exports are needed for the default setup.
+The AgentCore example is a single script. Complete the
+[observability setup](#agentcore-evaluations-setup) first, then run this command
+from this directory. The script initializes OpenTelemetry automatically; no
+environment exports are needed for the default setup.
 
 ```bash
-python 01-6_strands_summarization.py \
-  --session-id summarize-sonnet-high-workshop-run01
-
-python 01-7_agentcore_evaluation.py \
-  --session-ids summarize-sonnet-high-workshop-run01
+python 01-7_agentcore_evaluation.py
 ```
 
-To compare model or prompt changes in one batch, run `01-6` for each version
-with a distinct session ID, then pass all IDs to `01-7` using `--session-ids`.
-Use a fresh session ID for every agent invocation so separate runs do not
-contribute to the same session's traces and token totals.
-Use `--model-id` to change models and `--effort` to `none`, `low`, `medium`, or
-`high`; `none` disables adaptive thinking for models that do not support it.
-The defaults are Claude 5 Sonnet and `high`. Use `--review "..."` to replace
-the built-in product review, or edit `SYSTEM_PROMPT` to change the instructions.
-For example, compare the Sonnet session above with Haiku using `--effort none`:
+The script takes no command-line arguments. It runs the same summarization
+task three times, each in its own trace session:
 
-```bash
-python 01-6_strands_summarization.py \
-  --session-id summarize-haiku-none-workshop-run01 \
-  --model-id global.anthropic.claude-haiku-4-5-20251001-v1:0 \
-  --effort none
+| Run | Model | Effort |
+|-----|-------|--------|
+| 1 | Claude Haiku 4.5 (`global.anthropic.claude-haiku-4-5-20251001-v1:0`) | `none` |
+| 2 | Claude 5 Sonnet (`global.anthropic.claude-sonnet-5`) | `low` |
+| 3 | Claude 5 Sonnet (`global.anthropic.claude-sonnet-5`) | `high` |
 
-python 01-7_agentcore_evaluation.py \
-  --session-ids summarize-sonnet-high-workshop-run01 \
-    summarize-haiku-none-workshop-run01
-```
+Each session ID is generated as
+`summarize-<model>-<effort>-workshop-run-<GMT epoch millis>`, for example
+`summarize-sonnet-5-low-workshop-run-1792587720944`, so separate runs never
+share a session's traces or token totals. After all three runs, the script
+evaluates the sessions together and prints a side-by-side comparison of input,
+output, and total tokens, estimated cost, latency, and the `Correctness` and
+`GoalSuccessRate` scores.
 
-The evaluation script waits 300 seconds for CloudWatch ingestion before
-submitting the batch job. Keep the default wait for fresh sessions; reducing
-it can cause the evaluation to miss spans that have not reached CloudWatch yet.
-Use `--ingestion-wait-seconds` to change this delay. Pass `--no-wait` on the
-evaluation command to skip polling for completion; it still performs the
-ingestion wait, submits the job, and reports session usage before returning.
-By default, it polls every 30 seconds for up to 1,800 seconds after usage
-reporting. Each invocation starts a new evaluation job and accepts up to
-500 session IDs.
+Edit `CONFIGS` at the top of `01-7_agentcore_evaluation.py` to compare other
+models or adaptive-thinking efforts (`none`, `low`, `medium`, or `high`; `none`
+disables adaptive thinking for models that do not support it). Edit
+`EXAMPLE_REVIEW` to replace the built-in product review, or `SYSTEM_PROMPT` to
+change the instructions.
+
+AgentCore evaluation is an asynchronous task: in development or production it
+can run at a later time or periodically on traces already in CloudWatch. For the
+demo, the script runs the summarizations and the evaluation together. It waits
+300 seconds (`INGESTION_WAIT_SECONDS`) for CloudWatch ingestion before
+submitting the batch job. Keep the default wait for fresh sessions; reducing it
+can make the evaluation fail with "No spans were found". It then polls every 30
+seconds for up to 1,800 seconds. Each run starts a new evaluation job.
 
 ## The Levers
 
@@ -106,19 +101,23 @@ Set an `effort` level and the model decides, per request, how much to reason bef
 
 ### 6. Strands Summarization Agent
 
-`01-6` summarizes a product review and classifies its sentiment with a Strands
-agent backed by Amazon Bedrock. It prints the session ID, model, effort,
-input/output/total tokens, agent-call latency, and final response once.
-Latency excludes instrumentation setup and log-resource creation.
+`01-7` calls `summarize()` once per entry in `CONFIGS`. Each call summarizes a
+product review and classifies its sentiment with a Strands agent backed by
+Amazon Bedrock. The script prints the session ID, model, and effort before each
+run starts, then `summarize()` prints the input/output/total tokens, agent-call
+latency, and final response. Latency excludes instrumentation setup and
+log-resource creation. `run_agentcore_evaluation()` then evaluates all the
+sessions in one batch.
 
 The prompt requests a one-sentence summary and a sentiment label on exactly
 two lines. This is a prompt instruction, not a format validator. The agent's
-traces include the review, response, and session ID so `01-7` can evaluate
-the same run.
+traces include the review, response, and session ID so AgentCore Evaluations
+can evaluate the same run.
 
 ### 7. AgentCore Evaluations
 
-`01-7` starts a batch evaluation over the selected CloudWatch sessions using:
+`run_agentcore_evaluation()` starts one batch evaluation over the sessions
+that were just run, using:
 
 - `Builtin.Correctness`: judges the response against the conversation context.
   This sample does not supply an `expectedResponse` reference answer.
@@ -126,16 +125,17 @@ the same run.
   accurate, one-sentence summary and exactly one supported sentiment label.
 
 The script reports each session's trace token totals and estimated input/output
-inference cost, in the order of the supplied session IDs. `utils.py` searches
+inference cost. `utils.py` searches
 the last 24 hours of traces and retrieves current on-demand list prices from
 the AWS Price List API. These estimates exclude evaluation and observability
 charges. If traces or unambiguous prices are unavailable, the script reports
-that limitation and continues monitoring the evaluation.
+that limitation (shown as `n/a` in the comparison) and continues.
 
-After completion, the script prints the job status, completed-session count,
-and each evaluator's average score and evaluated count across the batch.
-Individual scores and judge explanations are in the CloudWatch log location
-returned by `GetBatchEvaluation.outputConfig`; the script does not print them.
+After completion, the script prints the job status and completed-session count,
+then reads each session's evaluator scores from the CloudWatch log location
+returned by `GetBatchEvaluation.outputConfig` and shows them in the comparison
+table. Judge explanations stay in that log location; the script does not print
+them.
 See [AWS: batch evaluation results](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/batch-evaluations-results.html).
 
 A score of `1.0` reflects the evaluator's judgment on these sessions. The
@@ -167,10 +167,10 @@ The Strands agent runs locally; it does not use Amazon Bedrock AgentCore
 Runtime. AgentCore Evaluations still needs the agent's supported Strands
 telemetry in CloudWatch:
 
-- `01-6` creates or reuses the CloudWatch log group
-  `/aws/bedrock-agentcore/runtimes/low-effort-summarizer-local` and its
+- `01-7` creates or reuses the CloudWatch log group
+  `/aws/bedrock-agentcore/runtimes/sample-summarizer-effort-local` and its
   `agent-logs` and `spans` streams. It sets the group's retention to seven days
-  on each run. `01-7` leaves the logs intact by default.
+  on each run. It leaves the logs intact by default (`DELETE_LOGS = False`).
 - Enable CloudWatch Transaction Search. X-Ray's trace-segment destination must
   be `CloudWatchLogs` and its status must be `ACTIVE`. Configure the CloudWatch
   Logs resource policies that allow X-Ray to deliver traces to the custom log
@@ -198,21 +198,21 @@ Configure Transaction Search and the resource policies before running the
 agent. The script handles creation of its log group and streams.
 AWS credentials should come from the normal AWS credential chain, such as an
 AWS profile. No environment exports are needed for the default setup.
-`01-6_strands_summarization.py` contains the defaults and preserves existing
+`01-7_agentcore_evaluation.py` contains the defaults and preserves existing
 environment overrides. For a custom setup, these optional settings are shared
-with the evaluation script:
+with `utils.py`:
 
 ```bash
 export AWS_REGION=us-east-1
 export AGENTCORE_EVAL_SERVICE_NAME=LowEffortSummarizer.DEFAULT
-export AGENTCORE_EVAL_LOG_GROUP=/aws/bedrock-agentcore/runtimes/low-effort-summarizer-local
+export AGENTCORE_EVAL_LOG_GROUP=/aws/bedrock-agentcore/runtimes/sample-summarizer-effort-local
 export AGENTCORE_EVAL_SPAN_LOG_STREAM=spans
 ```
 
 The agent derives its OpenTelemetry service name and log destinations from
 these settings unless the corresponding `OTEL_*` variables are already set.
 
-Both scripts require session IDs of at least 33 characters, starting with an
+The script requires session IDs of at least 33 characters, starting with an
 ASCII letter or digit and containing only ASCII letters, digits, hyphens, and
 underscores. AgentCore Runtime has this minimum length; the local example
 keeps the same rule so its session IDs remain portable.

@@ -3,6 +3,7 @@
 import json
 import os
 import re
+import time
 from datetime import datetime, timedelta, timezone
 
 import boto3
@@ -12,7 +13,7 @@ from botocore.exceptions import BotoCoreError, ClientError
 REGION = os.environ.get("AWS_REGION", "us-east-1")
 LOG_GROUP_NAME = os.environ.get(
     "AGENTCORE_EVAL_LOG_GROUP",
-    "/aws/bedrock-agentcore/runtimes/low-effort-summarizer-local",
+    "/aws/bedrock-agentcore/runtimes/sample-summarizer-effort-local",
 )
 SPAN_LOG_STREAM = os.environ.get("AGENTCORE_EVAL_SPAN_LOG_STREAM", "spans")
 TRACE_LOOKBACK_HOURS = 24
@@ -50,7 +51,8 @@ def _find_spans(value):
             yield from _find_spans(child)
 
 
-def _session_token_counts(logs, session_id):
+def _session_spans(logs, session_id):
+    """Return the session's spans from CloudWatch, keyed by span ID."""
     start_time = int(
         (datetime.now(timezone.utc) - timedelta(hours=TRACE_LOOKBACK_HOURS))
         .timestamp()
@@ -72,6 +74,11 @@ def _session_token_counts(logs, session_id):
             for span in _find_spans(payload):
                 if span["attributes"].get("session.id") == session_id:
                     spans[span["spanId"]] = span
+    return spans
+
+
+def _session_token_counts(logs, session_id):
+    spans = _session_spans(logs, session_id)
 
     token_spans = []
     for span in spans.values():
@@ -258,26 +265,24 @@ def _model_token_rates(pricing, model_id):
     return None
 
 
-def report_session_usage(session_id):
-    """Print session token totals and estimated input/output inference cost."""
+def get_session_usage(session_id):
+    """Return a session's trace token totals and estimated inference cost.
+
+    Returns {"input_tokens", "output_tokens", "total_tokens", "cost"}, where
+    cost is the on-demand list-price estimate for input/output tokens (None if
+    prices are unavailable). Returns None if the traces have no token counts.
+    """
     logs = boto3.client("logs", region_name=REGION)
     pricing = boto3.client("pricing", region_name=PRICE_LIST_REGION)
     try:
         usage = _session_token_counts(logs, session_id)
-    except (BotoCoreError, ClientError) as error:
-        print(f"Session token counts unavailable from CloudWatch traces: {error}")
-        return
+    except (BotoCoreError, ClientError):
+        return None
     if not usage:
-        print("Session token counts not found in the CloudWatch traces.")
-        return
+        return None
 
     total_input = sum(counts[0] for counts in usage.values())
     total_output = sum(counts[1] for counts in usage.values())
-    print(
-        "Agent session tokens: "
-        f"input={total_input}, output={total_output}, "
-        f"total={total_input + total_output}"
-    )
     try:
         cost = 0
         for model, (input_tokens, output_tokens) in usage.items():
@@ -296,11 +301,81 @@ def report_session_usage(session_id):
         TypeError,
         ValueError,
     ):
+        cost = None
+    return {
+        "input_tokens": total_input,
+        "output_tokens": total_output,
+        "total_tokens": total_input + total_output,
+        "cost": cost,
+    }
+
+
+def read_evaluation_scores(
+    output_config,
+    session_ids,
+    evaluator_ids,
+    timeout_seconds=120,
+    interval_seconds=5,
+):
+    """Read per-session evaluator scores from a batch evaluation's result logs.
+
+    Returns {session_id: {evaluator_id: {"score", "label", "error"}}}. Result
+    events can arrive shortly after the job completes, so poll until every
+    session has a result for every evaluator or the timeout expires.
+    """
+    cloudwatch = output_config["cloudWatchConfig"]
+    logs = boto3.client("logs", region_name=REGION)
+    deadline = time.monotonic() + timeout_seconds
+    while True:
+        scores = {session_id: {} for session_id in session_ids}
+        pages = logs.get_paginator("filter_log_events").paginate(
+            logGroupName=cloudwatch["logGroupName"],
+            logStreamNames=[cloudwatch["logStreamName"]],
+        )
+        for page in pages:
+            for event in page.get("events", []):
+                try:
+                    record = json.loads(event["message"])
+                except (KeyError, TypeError, json.JSONDecodeError):
+                    continue
+                if record.get("name") != "gen_ai.evaluation.result":
+                    continue
+                attributes = record.get("attributes", {})
+                session_id = attributes.get("session.id")
+                evaluator_id = attributes.get("gen_ai.evaluation.name")
+                if session_id in scores and evaluator_id:
+                    scores[session_id][evaluator_id] = {
+                        "score": attributes.get("gen_ai.evaluation.score.value"),
+                        "label": attributes.get("gen_ai.evaluation.score.label"),
+                        "error": attributes.get("error.message"),
+                    }
+        complete = all(
+            evaluator_id in scores[session_id]
+            for session_id in session_ids
+            for evaluator_id in evaluator_ids
+        )
+        if complete or time.monotonic() + interval_seconds > deadline:
+            return scores
+        time.sleep(interval_seconds)
+
+
+def report_session_usage(session_id):
+    """Print session token totals and estimated input/output inference cost."""
+    usage = get_session_usage(session_id)
+    if not usage:
+        print("Session token counts not found in the CloudWatch traces.")
+        return
+    print(
+        "Agent session tokens: "
+        f"input={usage['input_tokens']}, output={usage['output_tokens']}, "
+        f"total={usage['total_tokens']}"
+    )
+    if usage["cost"] is None:
         print("Estimated cost unavailable from the AWS Price List.")
         return
     print(
         "Estimated input/output inference cost "
-        f"(on-demand list price; evaluation excluded): ${cost:.6f}"
+        f"(on-demand list price; evaluation excluded): ${usage['cost']:.6f}"
     )
 
 
