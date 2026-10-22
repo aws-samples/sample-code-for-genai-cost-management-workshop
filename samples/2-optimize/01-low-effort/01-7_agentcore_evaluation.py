@@ -11,7 +11,13 @@ Prerequisites:
 - An AWS account with Amazon Bedrock model access
 - IAM credentials with bedrock:Converse, CloudWatch telemetry, and
   AgentCore Evaluations permissions
-- CloudWatch Transaction Search and AgentCore Observability configured
+- CloudWatch Transaction Search enabled, and the CloudWatch log group
+  /aws/bedrock-agentcore/runtimes/low-effort-summarizer-local with a resource
+  policy that lets X-Ray (xray.amazonaws.com) write to it. Either deploy
+  cfn/workshop-stack.yaml, which creates all of these, or create the log group
+  and its permissions yourself (see the low-effort README, "AgentCore
+  Evaluations setup"). The script creates the log group and streams if they are
+  missing, but it cannot grant the X-Ray permissions
 - Dependencies installed via: pip install -r requirements.txt
 - Run with `python`; the script configures OpenTelemetry before loading Strands
 

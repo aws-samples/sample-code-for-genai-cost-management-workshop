@@ -57,9 +57,25 @@ Parameters:
   SSMDocVersion:
     Type: String
     Description: SSM Document version (increment this to force document replacement during updates)
-    Default: v4
+    Default: v5
+  AgentCoreLogGroupName:
+    Type: String
+    Default: /aws/bedrock-agentcore/runtimes/low-effort-summarizer-local
+    Description: Log group the 01-7 AgentCore evaluation sample sends traces to
+  EnableTransactionSearch:
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+    Description: Enable CloudWatch Transaction Search (account-wide X-Ray setting) for the 01-7 AgentCore evaluation sample. Set to false if Transaction Search is already enabled in this account and Region
+  TransactionSearchIndexingPercentage:
+    Type: Number
+    Default: 1
+    MinValue: 0
+    MaxValue: 100
+    Description: Percentage of spans indexed as trace summaries (1 percent is free)
 
 Conditions:
+  ShouldEnableTransactionSearch: !Equals [!Ref EnableTransactionSearch, 'true']
   IsAL2023: !Equals [!Ref InstanceOperatingSystem, 'AmazonLinux-2023']
   IsGraviton: !Not [
     !Equals [
@@ -90,6 +106,12 @@ Metadata:
           - AssetZipS3Path
           - BranchZipS3Path
           - FolderZipS3Path
+      - Label:
+          default: AgentCore Evaluation Sample
+        Parameters:
+          - AgentCoreLogGroupName
+          - EnableTransactionSearch
+          - TransactionSearchIndexingPercentage
     ParameterLabels:
       CodeEditorUser:
         default: Code Editor user name
@@ -117,6 +139,12 @@ Metadata:
         default: Branch file S3 path
       FolderZipS3Path:
         default: Folder file S3 path
+      AgentCoreLogGroupName:
+        default: AgentCore evaluation log group
+      EnableTransactionSearch:
+        default: Enable CloudWatch Transaction Search
+      TransactionSearchIndexingPercentage:
+        default: Transaction Search indexing percentage
 
 Mappings:
   ArmImage:
@@ -443,6 +471,7 @@ Resources:
                 - !Sub echo 'export AWS_REGION=${AWS::Region}' >> /home/${CodeEditorUser}/.bashrc
                 - !Sub echo 'export AWS_ACCOUNTID=${AWS::AccountId}' >> /home/${CodeEditorUser}/.bashrc
                 - !Sub echo 'export AWS_ACCOUNT_ID=${AWS::AccountId}' >> /home/${CodeEditorUser}/.bashrc
+                - !Sub echo 'export AGENTCORE_EVAL_LOG_GROUP=${AgentCoreLogGroupName}' >> /home/${CodeEditorUser}/.bashrc
                 - !Sub echo 'export NEXT_TELEMETRY_DISABLED=1' >> /home/${CodeEditorUser}/.bashrc
                 - !Sub echo "export PS1='\[\033[01;32m\]\u:\[\033[01;34m\]\w\[\033[00m\]\$ '" >> /home/${CodeEditorUser}/.bashrc
                 - !Sub chown -R ${CodeEditorUser}:${CodeEditorUser} /home/${CodeEditorUser}
@@ -1463,6 +1492,90 @@ Resources:
       ServiceToken: !GetAtt EnableBedrockLoggingLambda.Arn
       LogGroupName: !Ref BedrockLoggingLogGroup
       LoggingRoleArn: !GetAtt BedrockLoggingRole.Arn
+
+  AgentCoreObservabilityLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Ref AgentCoreLogGroupName
+      RetentionInDays: 7
+
+  AgentCoreObservabilityTracePolicy:
+    Type: AWS::Logs::ResourcePolicy
+    DependsOn:
+      - AgentCoreObservabilityLogGroup
+    Properties:
+      PolicyName: !Sub "${InstanceName}-AgentCoreObservabilityTraceDelivery"
+      # PolicyDocument is a String property, so it is written as a JSON string.
+      PolicyDocument: !Sub |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "AllowXRayTraceDelivery",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "xray.amazonaws.com"
+              },
+              "Action": "logs:PutLogEvents",
+              "Resource": [
+                "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${AgentCoreLogGroupName}:*"
+              ],
+              "Condition": {
+                "ArnLike": {
+                  "aws:SourceArn": "arn:${AWS::Partition}:xray:${AWS::Region}:${AWS::AccountId}:*"
+                },
+                "StringEquals": {
+                  "aws:SourceAccount": "${AWS::AccountId}"
+                }
+              }
+            }
+          ]
+        }
+
+  # CloudWatch Transaction Search is an account-wide, per-Region X-Ray setting.
+  # AgentCore Evaluations needs it to read the agent's spans. Set the
+  # EnableTransactionSearch parameter to false if it is already enabled.
+  TransactionSearchLogsPolicy:
+    Type: AWS::Logs::ResourcePolicy
+    Condition: ShouldEnableTransactionSearch
+    Properties:
+      PolicyName: !Sub "${InstanceName}-TransactionSearchXRayAccess"
+      PolicyDocument: !Sub |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "TransactionSearchXRayAccess",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "xray.amazonaws.com"
+              },
+              "Action": "logs:PutLogEvents",
+              "Resource": [
+                "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:aws/spans:*",
+                "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/application-signals/data:*"
+              ],
+              "Condition": {
+                "ArnLike": {
+                  "aws:SourceArn": "arn:${AWS::Partition}:xray:${AWS::Region}:${AWS::AccountId}:*"
+                },
+                "StringEquals": {
+                  "aws:SourceAccount": "${AWS::AccountId}"
+                }
+              }
+            }
+          ]
+        }
+
+  TransactionSearchConfig:
+    Type: AWS::XRay::TransactionSearchConfig
+    Condition: ShouldEnableTransactionSearch
+    DependsOn:
+      - TransactionSearchLogsPolicy
+    Properties:
+      IndexingPercentage: !Ref TransactionSearchIndexingPercentage
 
 Outputs:
   URL:

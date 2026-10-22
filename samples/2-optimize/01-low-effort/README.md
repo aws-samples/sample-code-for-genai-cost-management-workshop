@@ -181,6 +181,14 @@ Amazon Nova 2 Lite (`global.amazon.nova-2-lite-v1:0`) works through the same Con
 - Access to Claude Haiku 4.5, Claude 5 Sonnet, and Amazon Nova 2 Lite on Amazon Bedrock
 - Dependencies installed via `pip install -r requirements.txt` from the repository root
 - Optional `AWS_REGION` override; the scripts default to `us-east-1`
+- For `01-7` only: a CloudWatch log group (default
+  `/aws/bedrock-agentcore/runtimes/low-effort-summarizer-local`) with a resource
+  policy that lets X-Ray write to it, plus CloudWatch Transaction Search. Either
+  deploy the [workshop stack](../../../cfn/workshop-stack.yaml), which creates
+  all of these, or create the log group and permissions yourself (see
+  [AgentCore Evaluations setup](#agentcore-evaluations-setup)). The script
+  creates a missing log group and its streams, but it cannot grant the X-Ray
+  permissions
 
 ## AgentCore Evaluations setup
 
@@ -195,9 +203,12 @@ telemetry in CloudWatch:
 - Enable CloudWatch Transaction Search. X-Ray's trace-segment destination must
   be `CloudWatchLogs` and its status must be `ACTIVE`. Configure the CloudWatch
   Logs resource policies that allow X-Ray to deliver traces to the custom log
-  group and the Transaction Search log groups. Neither these scripts nor the
-  checked-in [workshop stack](../../../cfn/workshop-stack.yaml) configure
-  Transaction Search or these resource policies.
+  group and the Transaction Search log groups. The checked-in
+  [workshop stack](../../../cfn/workshop-stack.yaml) does all of this for you
+  (the log group, both resource policies, and Transaction Search; set its
+  `EnableTransactionSearch` parameter to `false` if Transaction Search is already
+  enabled in the account). If you are not using the stack, or these scripts, set
+  them up yourself as described in the AWS guide below.
 - The script applies local AgentCore Observability defaults before initializing
   OpenTelemetry: service name `LowEffortSummarizer.DEFAULT`, traces and logs
   directed to the log group above, and content capture enabled so evaluation
@@ -215,8 +226,9 @@ for the CloudWatch Transaction Search, ADOT, environment-variable, and resource
 policy setup. The traces contain the review text and model response because
 AgentCore Evaluations needs that content to score the session.
 
-Configure Transaction Search and the resource policies before running the
-agent. The script handles creation of its log group and streams.
+Deploy the workshop stack, or configure Transaction Search and the resource
+policies yourself, before running the agent. The script handles creation of its
+log group and streams.
 AWS credentials should come from the normal AWS credential chain, such as an
 AWS profile. No environment exports are needed for the default setup.
 `01-7_agentcore_evaluation.py` contains the defaults and preserves existing
