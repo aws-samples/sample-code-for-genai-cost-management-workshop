@@ -25,6 +25,7 @@ The [01-low-effort](01-low-effort/) tier has runnable samples today, one per lev
 | [01-3_parameter_tuning.py](01-low-effort/01-3_parameter_tuning.py) | Parameter Tuning | `max_tokens` TPM reservation, `stop_sequences`, and `temperature` |
 | [01-4_prompt_caching.py](01-low-effort/01-4_prompt_caching.py) | Prompt Caching | `cachePoint` on a large static prefix - cache write then cache read at ~0.1x |
 | [01-5_adaptive_thinking.py](01-low-effort/01-5_adaptive_thinking.py) | Adaptive Thinking | Sweeps `effort` levels on Claude 5 Sonnet, showing reasoning-token and latency scaling |
+| [01-6_evaluation.py](01-low-effort/01-6_evaluation.py) | Evaluation | LLM-as-a-Judge: a rubric-based Claude 5 Sonnet judge scores Haiku vs Sonnet answers, so the cheaper-model decision rests on scores, not one output |
 
 See the [low-effort README](01-low-effort/README.md) for details on each lever and model-compatibility notes.
 

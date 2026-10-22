@@ -24,6 +24,7 @@ All samples use the workshop's allowed models via Global cross-region inference 
 | `01-3_parameter_tuning.py` | Parameter Tuning | `max_tokens` (the TPM quota reserved up front), `stop_sequences` (early termination), and `temperature` (determinism vs variation) |
 | `01-4_prompt_caching.py` | Prompt Caching | Caches a large static prefix with a `cachePoint` marker, showing a cache write on the first call and a cache read (billed ~0.1x) on the second |
 | `01-5_adaptive_thinking.py` | Adaptive Thinking | Sweeps `effort` levels (low / medium / high) on Claude 5 Sonnet, showing how reasoning (output) tokens and latency scale with effort |
+| `01-6_evaluation.py` | Evaluation (LLM-as-a-Judge) | A rubric-based judge (Claude 5 Sonnet, native structured output) scores Haiku and Sonnet answers on a small eval set, after a calibration check with a known-bad answer; compares quality, generation cost, and judging cost to decide whether the cheaper model is good enough |
 
 Run any script directly:
 
@@ -33,6 +34,7 @@ python 01-2_prompt_design.py
 python 01-3_parameter_tuning.py
 python 01-4_prompt_caching.py
 python 01-5_adaptive_thinking.py
+python 01-6_evaluation.py
 ```
 
 ## The Levers
@@ -56,6 +58,15 @@ Requests that resend the same system prompt, tool definitions, or reference docu
 ### 5. Adaptive Thinking
 
 Set an `effort` level and the model decides, per request, how much to reason before answering. It is both a quality lever (think when it helps) and a cost/latency lever (don't pay when it doesn't). The practical pattern is to step down from the default `high` once an eval shows a lower level holds quality.
+
+### 6. Evaluation (LLM-as-a-Judge)
+
+Every lever above says "confirm on an eval set". This is the smallest useful eval: a handful of representative inputs, a rubric with per-criterion scores, and a second model that grades each answer. Write the rationale before the scores, calibrate the judge on a deliberately wrong answer so you know it can fail something, and remember the judge costs tokens too - run it on a sample of traffic or in CI, not on every request. Judges favor longer answers and their own style, so spot-check a few judgments by hand. Edit `CANDIDATES`, `JUDGE`, `EVAL_SET`, and `PASS_THRESHOLD` at the top of the file to try your own setup.
+
+This sample hand-rolls the judge so every step is visible. For production, AWS offers two managed options:
+
+- [Amazon Bedrock Evaluations](https://docs.aws.amazon.com/bedrock/latest/userguide/evaluation-judge.html) - a model evaluation job that uses a judge model. You supply a prompt dataset (JSONL in Amazon S3), a generator model, and an evaluator model; Bedrock scores each response with built-in or custom metrics and explains each score. You can also bring responses from a model outside Bedrock. Best for comparing models or prompts offline, which is what this sample does.
+- [Amazon Bedrock AgentCore Evaluations](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/evaluations.html) - LLM-as-a-judge scoring of agent behavior from OpenTelemetry traces (Strands, LangGraph), with built-in evaluators such as `Builtin.Helpfulness`, custom evaluators, on-demand evaluation for CI/CD, and online evaluation of live traffic. Best when the thing you are evaluating is an agent rather than a single model call.
 
 ## Model Compatibility Notes
 
