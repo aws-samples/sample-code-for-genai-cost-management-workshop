@@ -10,7 +10,7 @@ The samples are organized by how much work each lever takes to adopt. Start LOW,
 
 | Tier | Folder | What it covers |
 |------|--------|----------------|
-| Low effort | [01-low-effort](01-low-effort/) | One-line changes, parameter tweaks, and short prompt refactors - no new infrastructure |
+| Low effort | [01-low-effort](01-low-effort/) | One-line changes, parameter tweaks, and short prompt refactors; the optional AgentCore evaluation sample uses CloudWatch observability |
 | Medium effort | [02-medium-effort](02-medium-effort/) | Architectural moves on well-trodden paths - some app or config change plus modest validation |
 | High effort | [03-high-effort](03-high-effort/) | Compound-AI patterns that add real complexity, earned on evidence |
 
@@ -26,6 +26,7 @@ The [01-low-effort](01-low-effort/) tier has runnable samples today, one per lev
 | [01-4_prompt_caching.py](01-low-effort/01-4_prompt_caching.py) | Prompt Caching | `cachePoint` on a large static prefix - cache write then cache read, on Claude 5 Sonnet (~0.1x read) and Nova 2 Lite (0.25x read, no write premium) |
 | [01-5_retry_turn_limits.py](01-low-effort/01-5_retry_turn_limits.py) | Retry, Turn and Stop Limits | Capped SDK retries, a capped application retry loop, and turn and tool-call caps on a stuck agent loop |
 | [01-6_evaluation.py](01-low-effort/01-6_evaluation.py) | Evaluation | LLM-as-a-Judge: a rubric-based Claude 5 Sonnet judge scores Haiku, Nova 2 Lite, and Sonnet answers, so the cheaper-model decision rests on scores, not one output |
+| [01-7_agentcore_evaluation.py](01-low-effort/01-7_agentcore_evaluation.py) | Agent Evaluation | A Strands summarization agent on Haiku 4.5 and Claude 5 Sonnet (low and high effort), scored together in one AgentCore evaluation, comparing tokens, estimated cost, latency, and evaluation scores |
 
 See the [low-effort README](01-low-effort/README.md) for details on each lever and model-compatibility notes.
 

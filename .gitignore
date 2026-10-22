@@ -7,3 +7,6 @@ samples/1-track/7-litellm/.env
 
 # Temporary source material for the optimize playbook (not part of the samples)
 samples/2-optimize/tmp/
+
+# Local AWS end-to-end tests and their artifacts
+.tests/

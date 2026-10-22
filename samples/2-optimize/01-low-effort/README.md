@@ -4,7 +4,7 @@ Cost-and-latency optimization levers that require little or no application chang
 
 ## Overview
 
-Each script is a standalone, runnable demonstration of one lever. They are independent - lift any one into your own application without the others. Every script prints the token, latency, or cost signal that makes the lever's payoff visible, so you can see the effect rather than take it on faith.
+Each sample is a runnable demonstration of one lever. Most are independent and need no new infrastructure. The AgentCore evaluation example uses two scripts and requires CloudWatch observability plus `pricing:DescribeServices`, `pricing:GetAttributeValues`, and `pricing:GetProducts` for its cost estimate.
 
 ## Models Used
 
@@ -26,6 +26,7 @@ Nova 2 Lite is an extra row in the comparison tables of the model selection, pro
 | `01-4_prompt_caching.py` | Prompt Caching | Caches a large static prefix with a `cachePoint` marker, showing a cache write on the first call and a cache read on the second (Claude billed ~0.1x, Nova 2 Lite 0.25x with no write premium) |
 | `01-5_retry_turn_limits.py` | Retry, Turn and Stop Limits | Caps SDK retries (against a simulated throttling outage), caps an application retry loop whose validator always fails, and caps turns and tool calls on a stuck tool-use loop, printing the spend each cap bounds |
 | `01-6_evaluation.py` | Evaluation (LLM-as-a-Judge) | A rubric-based judge (Claude 5 Sonnet, native structured output) scores Haiku, Nova 2 Lite, and Sonnet answers on a small eval set, after a calibration check with a known-bad answer; compares quality, generation cost, and judging cost to decide whether the cheaper model is good enough |
+| `01-7_agentcore_evaluation.py` | Strands Agent + AgentCore Evaluations | Runs a Bedrock-backed Strands summarization and sentiment agent on Haiku 4.5, Claude 5 Sonnet (low effort), and Claude 5 Sonnet (high effort), scores all three sessions in one AgentCore evaluation, and compares tokens, estimated cost, latency, and evaluation scores |
 
 Run any script directly:
 
@@ -37,6 +38,46 @@ python 01-4_prompt_caching.py
 python 01-5_retry_turn_limits.py
 python 01-6_evaluation.py
 ```
+
+The AgentCore example is a single script. Complete the
+[observability setup](#agentcore-evaluations-setup) first, then run this command
+from this directory. The script initializes OpenTelemetry automatically; no
+environment exports are needed for the default setup.
+
+```bash
+python 01-7_agentcore_evaluation.py
+```
+
+The script takes no command-line arguments. It runs the same summarization
+task three times, each in its own trace session:
+
+| Run | Model | Effort |
+|-----|-------|--------|
+| 1 | Claude Haiku 4.5 (`global.anthropic.claude-haiku-4-5-20251001-v1:0`) | `none` |
+| 2 | Claude 5 Sonnet (`global.anthropic.claude-sonnet-5`) | `low` |
+| 3 | Claude 5 Sonnet (`global.anthropic.claude-sonnet-5`) | `high` |
+
+Each session ID is generated as
+`summarize-<model>-<effort>-workshop-run-<GMT epoch millis>`, for example
+`summarize-sonnet-5-low-workshop-run-1792587720944`, so separate runs never
+share a session's traces or token totals. After all three runs, the script
+evaluates the sessions together and prints a side-by-side comparison of input,
+output, and total tokens, estimated cost, latency, and the `Correctness` and
+`GoalSuccessRate` scores.
+
+Edit `CONFIGS` at the top of `01-7_agentcore_evaluation.py` to compare other
+models or adaptive-thinking efforts (`none`, `low`, `medium`, or `high`; `none`
+disables adaptive thinking for models that do not support it). Edit
+`EXAMPLE_REVIEW` to replace the built-in product review, or `SYSTEM_PROMPT` to
+change the instructions.
+
+AgentCore evaluation is an asynchronous task: in development or production it
+can run at a later time or periodically on traces already in CloudWatch. For the
+demo, the script runs the summarizations and the evaluation together. It waits
+300 seconds (`INGESTION_WAIT_SECONDS`) for CloudWatch ingestion before
+submitting the batch job. Keep the default wait for fresh sessions; reducing it
+can make the evaluation fail with "No spans were found". It then polls every 30
+seconds for up to 1,800 seconds. Each run starts a new evaluation job.
 
 ## The Levers
 
@@ -71,6 +112,51 @@ This sample hand-rolls the judge so every step is visible. For production, AWS o
 - [Amazon Bedrock Evaluations](https://docs.aws.amazon.com/bedrock/latest/userguide/evaluation-judge.html) - a model evaluation job that uses a judge model. You supply a prompt dataset (JSONL in Amazon S3), a generator model, and an evaluator model; Bedrock scores each response with built-in or custom metrics and explains each score. You can also bring responses from a model outside Bedrock. Best for comparing models or prompts offline, which is what this sample does.
 - [Amazon Bedrock AgentCore Evaluations](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/evaluations.html) - LLM-as-a-judge scoring of agent behavior from OpenTelemetry traces (Strands, LangGraph), with built-in evaluators such as `Builtin.Helpfulness`, custom evaluators, on-demand evaluation for CI/CD, and online evaluation of live traffic. Best when the thing you are evaluating is an agent rather than a single model call.
 
+### 7. Strands Summarization Agent
+
+`01-7` calls `summarize()` once per entry in `CONFIGS`. Each call summarizes a
+product review and classifies its sentiment with a Strands agent backed by
+Amazon Bedrock. The script prints the session ID, model, and effort before each
+run starts, then `summarize()` prints the input/output/total tokens, agent-call
+latency, and final response. Latency excludes instrumentation setup and
+log-resource creation. `run_agentcore_evaluation()` then evaluates all the
+sessions in one batch.
+
+The prompt requests a one-sentence summary and a sentiment label on exactly
+two lines. This is a prompt instruction, not a format validator. The agent's
+traces include the review, response, and session ID so AgentCore Evaluations
+can evaluate the same run.
+
+### 8. AgentCore Evaluations
+
+`run_agentcore_evaluation()` starts one batch evaluation over the sessions
+that were just run, using:
+
+- `Builtin.Correctness`: judges the response against the conversation context.
+  This sample does not supply an `expectedResponse` reference answer.
+- `Builtin.GoalSuccessRate`: judges the two supplied assertions: a concise,
+  accurate, one-sentence summary and exactly one supported sentiment label.
+
+The script reports each session's trace token totals and estimated input/output
+inference cost. `utils.py` searches
+the last 24 hours of traces and retrieves current on-demand list prices from
+the AWS Price List API. These estimates exclude evaluation and observability
+charges. If traces or unambiguous prices are unavailable, the script reports
+that limitation (shown as `n/a` in the comparison) and continues.
+
+After completion, the script prints the job status and completed-session count,
+then reads each session's evaluator scores from the CloudWatch log location
+returned by `GetBatchEvaluation.outputConfig` and shows them in the comparison
+table. Judge explanations stay in that log location; the script does not print
+them.
+See [AWS: batch evaluation results](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/batch-evaluations-results.html).
+
+A score of `1.0` reflects the evaluator's judgment on these sessions. The
+assertions do not explicitly check the exact two-line format, and one review
+per configuration does not establish general model quality or cost savings.
+Use multiple representative reviews and compare per-session results when
+choosing a configuration.
+
 ## Model Compatibility Notes
 
 Two behaviors of the Claude 5 models affect these samples (and are worth knowing before you reuse the code):
@@ -89,7 +175,65 @@ Amazon Nova 2 Lite (`global.amazon.nova-2-lite-v1:0`) works through the same Con
 ## Prerequisites
 
 - Python 3.12+
-- IAM credentials with `bedrock-runtime:Converse` permission
+- IAM credentials with `bedrock:InvokeModel` for Converse and
+  `bedrock:InvokeModelWithResponseStream` for streaming calls, including the
+  Strands sample ([AWS permissions reference](https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html))
 - Access to Claude Haiku 4.5, Claude 5 Sonnet, and Amazon Nova 2 Lite on Amazon Bedrock
 - Dependencies installed via `pip install -r requirements.txt` from the repository root
-- `AWS_REGION` set (defaults to `us-east-1` if unset)
+- Optional `AWS_REGION` override; the scripts default to `us-east-1`
+
+## AgentCore Evaluations setup
+
+The Strands agent runs locally; it does not use Amazon Bedrock AgentCore
+Runtime. AgentCore Evaluations still needs the agent's supported Strands
+telemetry in CloudWatch:
+
+- `01-7` creates or reuses the CloudWatch log group
+  `/aws/bedrock-agentcore/runtimes/sample-summarizer-effort-local` and its
+  `agent-logs` and `spans` streams. It sets the group's retention to seven days
+  on each run. It leaves the logs intact by default (`DELETE_LOGS = False`).
+- Enable CloudWatch Transaction Search. X-Ray's trace-segment destination must
+  be `CloudWatchLogs` and its status must be `ACTIVE`. Configure the CloudWatch
+  Logs resource policies that allow X-Ray to deliver traces to the custom log
+  group and the Transaction Search log groups. Neither these scripts nor the
+  checked-in [workshop stack](../../../cfn/workshop-stack.yaml) configure
+  Transaction Search or these resource policies.
+- The script applies local AgentCore Observability defaults before initializing
+  OpenTelemetry: service name `LowEffortSummarizer.DEFAULT`, traces and logs
+  directed to the log group above, and content capture enabled so evaluation
+  can read prompts and responses. Run it with plain `python`; a separate
+  `opentelemetry-instrument` launcher is unnecessary.
+- Use AWS credentials with Bedrock model invocation, X-Ray/CloudWatch telemetry
+  export, log-group/stream creation, retention updates, trace reading, and
+  AgentCore batch-evaluation permissions. Cost lookup additionally uses the
+  three AWS Price List permissions listed in the overview. Batch evaluation
+  runs under the caller's credentials; it does not require an AgentCore Runtime
+  or a separate evaluation service role.
+
+See [AWS: observability setup](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability-get-started.html)
+for the CloudWatch Transaction Search, ADOT, environment-variable, and resource
+policy setup. The traces contain the review text and model response because
+AgentCore Evaluations needs that content to score the session.
+
+Configure Transaction Search and the resource policies before running the
+agent. The script handles creation of its log group and streams.
+AWS credentials should come from the normal AWS credential chain, such as an
+AWS profile. No environment exports are needed for the default setup.
+`01-7_agentcore_evaluation.py` contains the defaults and preserves existing
+environment overrides. For a custom setup, these optional settings are shared
+with `utils.py`:
+
+```bash
+export AWS_REGION=us-east-1
+export AGENTCORE_EVAL_SERVICE_NAME=LowEffortSummarizer.DEFAULT
+export AGENTCORE_EVAL_LOG_GROUP=/aws/bedrock-agentcore/runtimes/sample-summarizer-effort-local
+export AGENTCORE_EVAL_SPAN_LOG_STREAM=spans
+```
+
+The agent derives its OpenTelemetry service name and log destinations from
+these settings unless the corresponding `OTEL_*` variables are already set.
+
+The script requires session IDs of at least 33 characters, starting with an
+ASCII letter or digit and containing only ASCII letters, digits, hyphens, and
+underscores. AgentCore Runtime has this minimum length; the local example
+keeps the same rule so its session IDs remain portable.
