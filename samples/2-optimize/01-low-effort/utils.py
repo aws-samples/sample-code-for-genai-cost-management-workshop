@@ -13,7 +13,7 @@ from botocore.exceptions import BotoCoreError, ClientError
 REGION = os.environ.get("AWS_REGION", "us-east-1")
 LOG_GROUP_NAME = os.environ.get(
     "AGENTCORE_EVAL_LOG_GROUP",
-    "/aws/bedrock-agentcore/runtimes/sample-summarizer-effort-local",
+    "/aws/bedrock-agentcore/runtimes/low-effort-summarizer-local",
 )
 SPAN_LOG_STREAM = os.environ.get("AGENTCORE_EVAL_SPAN_LOG_STREAM", "spans")
 TRACE_LOOKBACK_HOURS = 24

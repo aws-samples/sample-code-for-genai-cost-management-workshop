@@ -189,7 +189,7 @@ Runtime. AgentCore Evaluations still needs the agent's supported Strands
 telemetry in CloudWatch:
 
 - `01-7` creates or reuses the CloudWatch log group
-  `/aws/bedrock-agentcore/runtimes/sample-summarizer-effort-local` and its
+  `/aws/bedrock-agentcore/runtimes/low-effort-summarizer-local` and its
   `agent-logs` and `spans` streams. It sets the group's retention to seven days
   on each run. It leaves the logs intact by default (`DELETE_LOGS = False`).
 - Enable CloudWatch Transaction Search. X-Ray's trace-segment destination must
@@ -226,7 +226,7 @@ with `utils.py`:
 ```bash
 export AWS_REGION=us-east-1
 export AGENTCORE_EVAL_SERVICE_NAME=LowEffortSummarizer.DEFAULT
-export AGENTCORE_EVAL_LOG_GROUP=/aws/bedrock-agentcore/runtimes/sample-summarizer-effort-local
+export AGENTCORE_EVAL_LOG_GROUP=/aws/bedrock-agentcore/runtimes/low-effort-summarizer-local
 export AGENTCORE_EVAL_SPAN_LOG_STREAM=spans
 ```
 
