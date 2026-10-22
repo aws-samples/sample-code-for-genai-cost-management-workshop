@@ -20,12 +20,12 @@ The [01-low-effort](01-low-effort/) tier has runnable samples today, one per lev
 
 | Script | Lever | What it demonstrates |
 |--------|-------|----------------------|
-| [01-1_model_selection.py](01-low-effort/01-1_model_selection.py) | Model Selection | Same task on Haiku vs Claude 5 Sonnet, comparing tokens, latency, and per-call cost |
-| [01-2_prompt_design.py](01-low-effort/01-2_prompt_design.py) | Prompt Design | Clear instructions, few-shot examples, and three structured-output methods |
-| [01-3_parameter_tuning.py](01-low-effort/01-3_parameter_tuning.py) | Parameter Tuning | `max_tokens` TPM reservation, `stop_sequences`, and `temperature` |
-| [01-4_prompt_caching.py](01-low-effort/01-4_prompt_caching.py) | Prompt Caching | `cachePoint` on a large static prefix - cache write then cache read at ~0.1x |
-| [01-5_adaptive_thinking.py](01-low-effort/01-5_adaptive_thinking.py) | Adaptive Thinking | Sweeps `effort` levels on Claude 5 Sonnet, showing reasoning-token and latency scaling |
-| [01-6_evaluation.py](01-low-effort/01-6_evaluation.py) | Evaluation | LLM-as-a-Judge: a rubric-based Claude 5 Sonnet judge scores Haiku vs Sonnet answers, so the cheaper-model decision rests on scores, not one output |
+| [01-1_model_selection.py](01-low-effort/01-1_model_selection.py) | Model Selection | Same task on Haiku, Claude 5 Sonnet, and Nova 2 Lite, comparing tokens, latency, and per-call cost |
+| [01-2_prompt_design.py](01-low-effort/01-2_prompt_design.py) | Prompt Design | Clear instructions, few-shot examples, and three structured-output methods, on Claude and Nova 2 Lite |
+| [01-3_output_reasoning_limits.py](01-low-effort/01-3_output_reasoning_limits.py) | Output and Reasoning Limits | `max_tokens` TPM reservation, `stop_sequences`, `temperature`, and reasoning `effort` matched to task complexity, on Claude and Nova 2 Lite |
+| [01-4_prompt_caching.py](01-low-effort/01-4_prompt_caching.py) | Prompt Caching | `cachePoint` on a large static prefix - cache write then cache read, on Claude 5 Sonnet (~0.1x read) and Nova 2 Lite (0.25x read, no write premium) |
+| [01-5_retry_turn_limits.py](01-low-effort/01-5_retry_turn_limits.py) | Retry, Turn and Stop Limits | Capped SDK retries, a capped application retry loop, and turn and tool-call caps on a stuck agent loop |
+| [01-6_evaluation.py](01-low-effort/01-6_evaluation.py) | Evaluation | LLM-as-a-Judge: a rubric-based Claude 5 Sonnet judge scores Haiku, Nova 2 Lite, and Sonnet answers, so the cheaper-model decision rests on scores, not one output |
 
 See the [low-effort README](01-low-effort/README.md) for details on each lever and model-compatibility notes.
 
@@ -56,12 +56,13 @@ Two further levers from the playbook - GEPA/DSPy and Tool Search via MCP Gateway
 
 ## Models Used
 
-Most samples use the workshop's allowed models via Global cross-region inference profiles. The service tiers (Flex) sample uses the direct `openai.gpt-oss-120b` model ID because Flex is not served by Claude:
+Most samples use the workshop's allowed models via Global cross-region inference profiles. The low-effort samples also run Amazon Nova 2 Lite through the same Converse API as an extra row in each comparison. The service tiers (Flex) sample uses the direct `openai.gpt-oss-120b` model ID because Flex is not served by Claude:
 
 | Alias | Model ID |
 |-------|----------|
 | Haiku 4.5 | `global.anthropic.claude-haiku-4-5-20251001-v1:0` |
 | Claude 5 Sonnet | `global.anthropic.claude-sonnet-5` |
+| Amazon Nova 2 Lite | `global.amazon.nova-2-lite-v1:0` |
 | OpenAI gpt-oss-120b | `openai.gpt-oss-120b-1:0` |
 
 The LLM routing sample can also compare against the open-source [Strands Decider 2B](https://strandsagents.com/blog/introducing-strands-decider/) decision model. It runs locally, is optional, and is not a Bedrock model.

@@ -6,7 +6,8 @@ gap between Claude tiers is roughly 5x per tier, so running a frontier model on
 a task a smaller one handles is pure waste - and usually slower too.
 
 You will learn how to:
-- Run the same task on a small model (Haiku) and a mid-tier model (Sonnet)
+- Run the same task on a small model (Haiku), a mid-tier model (Sonnet), and
+  Amazon Nova 2 Lite - a different model family, through the same Converse API
 - Compare input/output tokens, latency, and per-call cost side by side
 - See why you confirm the cheaper choice on an eval set, not on one output
 
@@ -40,13 +41,18 @@ RUNTIME = boto3.client("bedrock-runtime", region_name=REGION)
 # Allowed workshop models (Global cross-region inference profiles)
 HAIKU = "global.anthropic.claude-haiku-4-5-20251001-v1:0"
 SONNET = "global.anthropic.claude-sonnet-5"
+NOVA = "global.amazon.nova-2-lite-v1:0"
 
 # Pricing per 1M tokens (USD). Illustrative workshop values - always verify
 # current pricing at https://aws.amazon.com/bedrock/pricing/
 PRICING = {
     HAIKU: {"input": 1.00, "output": 5.00},
     SONNET: {"input": 3.00, "output": 15.00},
+    NOVA: {"input": 0.30, "output": 2.50},
 }
+
+# Readable labels for the output tables.
+LABELS = {HAIKU: "Haiku 4.5", SONNET: "Claude 5 Sonnet", NOVA: "Nova 2 Lite"}
 
 # A neutral example task, reused so the same-input comparison is fair.
 EXAMPLE_TASK = (
@@ -104,29 +110,33 @@ def converse_simple(model_id: str, query: str, max_tokens: int = 400) -> dict:
 # ============================================================
 
 def compare_models() -> None:
-    """Run the same task on Haiku and Sonnet and compare cost/latency/tokens."""
-    print("--- Model Selection: same task, two model tiers ---\n")
+    """Run the same task on Haiku, Sonnet and Nova 2 Lite; compare cost/latency/tokens."""
+    print("--- Model Selection: same task, three models ---\n")
 
     rows = []
-    for model_id in [HAIKU, SONNET]:
+    for model_id in [HAIKU, SONNET, NOVA]:
         r = converse_simple(model_id, EXAMPLE_TASK)
         cost = calculate_cost(r["input_tokens"], r["output_tokens"], r["model"])
         rows.append(
             (
-                model_id.split(".")[-1][:24],
+                LABELS[model_id],
                 r["input_tokens"],
                 r["output_tokens"],
                 r["latency_ms"],
                 cost,
             )
         )
-        print(f"=== {model_id} ===")
+        print(f"=== {LABELS[model_id]} ({model_id}) ===")
         print(f"{r['text']}\n")
 
-    print("\nSummary:")
-    print(f"{'Model':<26} {'In':>6} {'Out':>6} {'ms':>7} {'$':>11}")
+    print("\n--- Comparison: same task, three models ---")
+    print(f"{'Model':<18} {'In':>6} {'Out':>6} {'ms':>7} {'$/call':>11} {'Cost vs Haiku':>14}")
+    base_cost = rows[0][4]
     for name, in_tok, out_tok, ms, cost in rows:
-        print(f"{name:<26} {in_tok:>6} {out_tok:>6} {ms:>7} {cost:>11.6f}")
+        print(
+            f"{name:<18} {in_tok:>6} {out_tok:>6} {ms:>7} {cost:>11.6f} "
+            f"{cost / base_cost:>13.1f}x"
+        )
 
     print(
         "\n  For a well-defined single-step task, the smaller model often produces"

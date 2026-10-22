@@ -43,7 +43,7 @@ Once you can see where spend goes, the optimize samples show how to reduce it, o
 
 | Tier | Levers |
 |------|--------|
-| Low effort | Model selection, prompt design, parameter tuning, prompt caching, adaptive thinking |
+| Low effort | Model selection, prompt design, output and reasoning limits, prompt caching, retry and turn limits, evaluation |
 | Medium effort | LLM routing, Bedrock Guardrails, RAG / indexing, batch inference |
 | High effort | Harness engineering, sub-agent delegation |
 
@@ -62,7 +62,7 @@ samples/
 │   ├── 6-iam-identity-log-attribution/   # Model invocation logging with IAM caller identity
 │   └── 7-litellm/                        # LiteLLM proxy for multi-provider tracking
 └── 2-optimize/                           # Cost reduction: spend less without sacrificing quality
-    ├── 01-low-effort/                    # Model selection, prompt design, tuning, caching, adaptive thinking
+    ├── 01-low-effort/                    # Model selection, prompt design, output limits, caching, retry limits, eval
     ├── 02-medium-effort/                 # LLM routing, guardrails, RAG/indexing, batch inference
     └── 03-high-effort/                   # Harness engineering, sub-agent delegation
 ```

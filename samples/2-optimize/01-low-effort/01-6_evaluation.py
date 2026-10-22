@@ -29,13 +29,13 @@ evaluation jobs that use a judge model) and Amazon Bedrock AgentCore Evaluations
 
 Known judge biases to keep in mind: judges tend to favor longer answers, and a
 model tends to favor its own style (self-preference). Here Claude 5 Sonnet judges
-both candidates, so treat the Sonnet-vs-Haiku gap with a little caution and
+every candidate, so treat the Sonnet-vs-Haiku gap with a little caution and
 spot-check a few judgments by hand.
 
 Prerequisites:
 - An AWS account with Amazon Bedrock access
 - IAM credentials with bedrock-runtime:Converse permission
-- Access to Claude models on Amazon Bedrock
+- Access to Claude and Amazon Nova models on Amazon Bedrock
 - Dependencies installed via: pip install -r requirements.txt
 """
 
@@ -56,9 +56,11 @@ RUNTIME = boto3.client("bedrock-runtime", region_name=REGION)
 # Allowed workshop models (Global cross-region inference profiles)
 HAIKU = "global.anthropic.claude-haiku-4-5-20251001-v1:0"
 SONNET = "global.anthropic.claude-sonnet-5"
+NOVA = "global.amazon.nova-2-lite-v1:0"
 
-# Candidates under test: the cheap model we hope to use, and the incumbent.
-CANDIDATES = [HAIKU, SONNET]
+# Candidates under test: the cheaper models we hope to use, then the incumbent
+# (always last - every cheaper candidate is compared against it).
+CANDIDATES = [HAIKU, NOVA, SONNET]
 
 # The judge model. Edit this to try a different judge.
 JUDGE = SONNET
@@ -71,6 +73,7 @@ PASS_THRESHOLD = 4.0
 PRICING = {
     HAIKU: {"input": 1.00, "output": 5.00},
     SONNET: {"input": 3.00, "output": 15.00},
+    NOVA: {"input": 0.30, "output": 2.50},
 }
 
 # The task being evaluated. Candidates receive this instruction plus one review.
@@ -153,7 +156,11 @@ def calculate_cost(input_tokens: int, output_tokens: int, model_id: str) -> floa
 
 def short_name(model_id: str) -> str:
     """Return a readable model label for tables."""
-    return "haiku-4-5" if "haiku" in model_id else "sonnet-5"
+    if "haiku" in model_id:
+        return "haiku-4-5"
+    if "nova" in model_id:
+        return "nova-2-lite"
+    return "sonnet-5"
 
 
 def first_text(resp: dict) -> str:
@@ -290,17 +297,18 @@ def print_summary(results: dict) -> None:
     print(f"\n  Judging cost ${judge_total:.6f} vs ${gen_total:.6f} to generate the "
           "answers - the eval itself is not free, so run it on a sample.")
 
-    cheap, incumbent = CANDIDATES[0], CANDIDATES[-1]
-    saving = 1 - results[cheap]["gen_cost"] / results[incumbent]["gen_cost"]
-    gap = avg[incumbent] - avg[cheap]
-    print(f"\n  {short_name(cheap)} costs {saving:.0%} less to generate than "
-          f"{short_name(incumbent)}, with a score gap of {gap:+.2f}.")
-    if avg[cheap] >= PASS_THRESHOLD and gap <= 0.25:
-        print(f"  Decision: quality holds (>= {PASS_THRESHOLD}) - switch to "
-              f"{short_name(cheap)} and keep monitoring.")
-    else:
-        print(f"  Decision: {short_name(cheap)} falls short of the bar - stay on "
-              f"{short_name(incumbent)}, or tighten the prompt and re-run.")
+    incumbent = CANDIDATES[-1]
+    for cheap in CANDIDATES[:-1]:
+        saving = 1 - results[cheap]["gen_cost"] / results[incumbent]["gen_cost"]
+        gap = avg[incumbent] - avg[cheap]
+        print(f"\n  {short_name(cheap)} costs {saving:.0%} less to generate than "
+              f"{short_name(incumbent)}, with a score gap of {gap:+.2f}.")
+        if avg[cheap] >= PASS_THRESHOLD and gap <= 0.25:
+            print(f"  Decision: quality holds (>= {PASS_THRESHOLD}) - switch to "
+                  f"{short_name(cheap)} and keep monitoring.")
+        else:
+            print(f"  Decision: {short_name(cheap)} falls short of the bar - stay on "
+                  f"{short_name(incumbent)}, or tighten the prompt and re-run.")
 
 
 # ============================================================
