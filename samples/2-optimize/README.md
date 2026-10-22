@@ -56,13 +56,15 @@ Two further levers from the playbook - GEPA/DSPy and Tool Search via MCP Gateway
 
 ## Models Used
 
-Most samples use the workshop's allowed models via Global cross-region inference profiles; `02-5_service_tiers.py` uses the direct `openai.gpt-oss-120b` model ID because Flex is not served by Claude:
+Most samples use the workshop's allowed models via Global cross-region inference profiles. The service tiers (Flex) sample uses the direct `openai.gpt-oss-120b` model ID because Flex is not served by Claude:
 
 | Alias | Model ID |
 |-------|----------|
 | Haiku 4.5 | `global.anthropic.claude-haiku-4-5-20251001-v1:0` |
 | Claude 5 Sonnet | `global.anthropic.claude-sonnet-5` |
 | OpenAI gpt-oss-120b | `openai.gpt-oss-120b-1:0` |
+
+The LLM routing sample can also compare against the open-source [Strands Decider 2B](https://strandsagents.com/blog/introducing-strands-decider/) decision model. It runs locally, is optional, and is not a Bedrock model.
 
 ## Setup
 
