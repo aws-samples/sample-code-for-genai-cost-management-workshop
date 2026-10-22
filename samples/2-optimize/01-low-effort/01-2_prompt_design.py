@@ -77,7 +77,70 @@ def build_inference_config(model_id: str, max_tokens: int) -> dict:
     return cfg
 
 
-def converse_simple(model_id: str, prompt: str, max_tokens: int = 200) -> dict:
+# Token usage per call, collected as the demos run and summarised at the end.
+# Each entry: (use_case, technique, model_id, input_tokens, output_tokens)
+USAGE_LOG: list[tuple[str, str, str, int, int]] = []
+
+
+def log_usage(use_case: str, technique: str, model_id: str, usage: dict) -> None:
+    """Record the token usage of one Converse call for the summary table."""
+    USAGE_LOG.append(
+        (use_case, technique, model_id, usage["inputTokens"], usage["outputTokens"])
+    )
+
+
+def print_usage_table() -> None:
+    """Print a summary table of average tokens per call for every technique."""
+    # Group calls by (use case, technique, model), keeping first-seen order.
+    groups: dict[tuple[str, str, str], list[tuple[int, int]]] = {}
+    for use_case, technique, model_id, tok_in, tok_out in USAGE_LOG:
+        groups.setdefault((use_case, technique, model_id), []).append((tok_in, tok_out))
+
+    short = {HAIKU: "Haiku 4.5", SONNET: "Sonnet 5"}
+    rows = []
+    for (use_case, technique, model_id), calls in groups.items():
+        n = len(calls)
+        rows.append(
+            (
+                use_case,
+                technique,
+                short.get(model_id, model_id),
+                str(n),
+                str(round(sum(c[0] for c in calls) / n)),
+                str(round(sum(c[1] for c in calls) / n)),
+            )
+        )
+
+    headers = ("Use case", "Technique", "Model", "Calls", "Avg input", "Avg output")
+    widths = [max(len(h), *(len(r[i]) for r in rows)) for i, h in enumerate(headers)]
+
+    def fmt(cells) -> str:
+        # Left-align text columns, right-align the numeric ones.
+        parts = [
+            c.ljust(widths[i]) if i < 3 else c.rjust(widths[i])
+            for i, c in enumerate(cells)
+        ]
+        return "  " + " | ".join(parts)
+
+    print("--- Token summary (average per call) ---\n")
+    print(fmt(headers))
+    print("  " + "-+-".join("-" * w for w in widths))
+    for row in rows:
+        print(fmt(row))
+    print("\n  - The VAGUE prompt hit the 200 max_tokens cap, so its real cost is higher.")
+    print("  - Few-shot adds input tokens but trims output and pins the format.")
+    print("  - Prompt-based and prefill are cheapest but give no schema guarantee.")
+    print("  - Native JSON schema guarantees valid output with fewer input tokens than")
+    print("    strict tool use, which carries the tool definition on every call.\n")
+
+
+def converse_simple(
+    model_id: str,
+    prompt: str,
+    max_tokens: int = 200,
+    use_case: str = "",
+    technique: str = "",
+) -> dict:
     """Single-turn Converse call returning text and token usage."""
     resp = RUNTIME.converse(
         modelId=model_id,
@@ -85,6 +148,8 @@ def converse_simple(model_id: str, prompt: str, max_tokens: int = 200) -> dict:
         inferenceConfig=build_inference_config(model_id, max_tokens),
     )
     usage = resp["usage"]
+    if use_case:
+        log_usage(use_case, technique, model_id, usage)
     return {
         "text": resp["output"]["message"]["content"][0]["text"],
         "input_tokens": usage["inputTokens"],
@@ -114,7 +179,12 @@ def demo_clear_instructions() -> None:
     )
 
     for label, prompt in [("VAGUE", vague), ("STRUCTURED", structured)]:
-        r = converse_simple(HAIKU, prompt)
+        r = converse_simple(
+            HAIKU,
+            prompt,
+            use_case="2.1 Clear instructions",
+            technique="Vague prompt" if label == "VAGUE" else "Structured prompt",
+        )
         print(f"[{label}]  in={r['input_tokens']}  out={r['output_tokens']}")
         print(f"{r['text']}\n")
 
@@ -163,7 +233,13 @@ def demo_few_shot() -> None:
     for p in products:
         outs = {}
         for label, tmpl in [("zero", zero_shot), ("few", few_shot)]:
-            r = converse_simple(HAIKU, tmpl.format(product=p), max_tokens=60)
+            r = converse_simple(
+                HAIKU,
+                tmpl.format(product=p),
+                max_tokens=60,
+                use_case="2.2 Few-shot examples",
+                technique="Zero-shot" if label == "zero" else "Few-shot (3 examples)",
+            )
             outs[label] = r["text"].strip().splitlines()[0]
         print(f"{p[:60]}")
         print(f"  {'zero-shot:':<12}{outs['zero']}")
@@ -190,6 +266,7 @@ def structured_prompt_based() -> dict:
         messages=[{"role": "user", "content": [{"text": CLASSIFY_EMAIL}]}],
         inferenceConfig={"maxTokens": 256},  # Claude 5 Sonnet: no temperature
     )
+    log_usage("2.3 Structured output", "(a) Prompt-based", SONNET, resp["usage"])
     text = resp["output"]["message"]["content"][0]["text"]
     return json.loads(text)  # may raise if the model added prose or fences
 
@@ -214,6 +291,7 @@ def structured_prefill_haiku() -> dict:
         ],
         inferenceConfig={"maxTokens": 256, "temperature": 0},
     )
+    log_usage("2.3 Structured output", "(a') Prefill", HAIKU, resp["usage"])
     return json.loads("{" + resp["output"]["message"]["content"][0]["text"])
 
 
@@ -223,7 +301,8 @@ def structured_tool_use() -> tuple[dict, int]:
         "toolSpec": {
             "name": "classify_email",
             "description": "Classify a customer email.",
-            "inputSchema": {"json": SCHEMA},
+            "strict": True,  # grammar-enforce the tool input against the schema
+            "inputSchema": {"json": SCHEMA},  # a dict here, unlike outputConfig
         }
     }
     resp = RUNTIME.converse(
@@ -235,6 +314,7 @@ def structured_tool_use() -> tuple[dict, int]:
         },
         inferenceConfig={"maxTokens": 256},  # Claude 5 Sonnet: no temperature
     )
+    log_usage("2.3 Structured output", "(b) Strict tool use", SONNET, resp["usage"])
     data = next(
         c["toolUse"]["input"] for c in resp["output"]["message"]["content"] if "toolUse" in c
     )
@@ -245,18 +325,17 @@ def structured_native_json_schema() -> tuple[dict, int]:
     """(c) Native structured output: constrained decoding guarantees schema-valid text.
 
     On Converse the schema must be a JSON STRING (json.dumps). Native structured
-    output is available on bedrock-runtime (not bedrock-mantle). Every object
-    needs additionalProperties: false.
+    output is available on bedrock-runtime. Every object needs
+    additionalProperties: false.
 
-    NOTE: this demo runs on Haiku 4.5. Native structured output (the outputConfig
-    path) is not accepted by Claude 5 Sonnet, which returns a ValidationException
-    ("output_config.format: Extra inputs are not permitted"). Use tool use (b) on
-    the thinking-capable Claude 5 models when you need a schema guarantee there.
+    Runs on Claude 5 Sonnet (no temperature). Parse by selecting the text block
+    by key, since content[0] is not guaranteed to be text on thinking-capable
+    models.
     """
     resp = RUNTIME.converse(
-        modelId=HAIKU,
+        modelId=SONNET,
         messages=[{"role": "user", "content": [{"text": CLASSIFY_EMAIL}]}],
-        inferenceConfig={"maxTokens": 256, "temperature": 0},
+        inferenceConfig={"maxTokens": 512},  # Claude 5 Sonnet: no temperature
         outputConfig={
             "textFormat": {
                 "type": "json_schema",
@@ -270,8 +349,9 @@ def structured_native_json_schema() -> tuple[dict, int]:
             }
         },
     )
-    data = json.loads(resp["output"]["message"]["content"][0]["text"])
-    return data, resp["usage"]["inputTokens"]
+    log_usage("2.3 Structured output", "(c) Native JSON schema", SONNET, resp["usage"])
+    text = next(b["text"] for b in resp["output"]["message"]["content"] if "text" in b)
+    return json.loads(text), resp["usage"]["inputTokens"]
 
 
 def demo_structured_output() -> None:
@@ -293,7 +373,7 @@ def demo_structured_output() -> None:
     print(f"    input tokens: {in_tokens} (higher - the schema rides along)")
 
     data, in_tokens = structured_native_json_schema()
-    print("\n(c) native JSON schema on Haiku (API-validated, the default for data extraction):")
+    print("\n(c) native JSON schema (API-validated, the default for data extraction):")
     print(json.dumps(data, indent=2))
     print(f"    input tokens: {in_tokens} (lower than tool use - no tool definition)")
 
@@ -310,6 +390,7 @@ def main():
     demo_clear_instructions()
     demo_few_shot()
     demo_structured_output()
+    print_usage_table()
 
     print("--- Done ---")
     print("  Prompt design cuts wasted input tokens on every call and makes output")

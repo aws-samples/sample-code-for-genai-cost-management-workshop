@@ -62,7 +62,7 @@ Set an `effort` level and the model decides, per request, how much to reason bef
 Two behaviors of the Claude 5 models affect these samples (and are worth knowing before you reuse the code):
 
 - **`temperature` is deprecated on Claude 5 Sonnet.** Supplying it returns `ValidationException: temperature is deprecated for this model`. The samples omit `temperature` for Sonnet 5 and keep it only for Haiku 4.5 (which is why the parameter-tuning demo runs on Haiku).
-- **Native structured output is not accepted by Claude 5 Sonnet.** The `outputConfig` / JSON-schema path returns `ValidationException: output_config.format: Extra inputs are not permitted` on Sonnet 5, so `01-2` runs that specific demo on Haiku 4.5. When you need a schema guarantee on a thinking-capable Claude 5 model, use tool use (forced tool call) instead.
+- **Native structured output works on Claude 5 Sonnet.** `01-2` passes the schema through Converse `outputConfig.textFormat` (as a `json.dumps` string, with `additionalProperties: false` on every object). Select the text block by key rather than `content[0]`, because thinking-capable models can lead with a reasoning block.
 
 ## Prerequisites
 
