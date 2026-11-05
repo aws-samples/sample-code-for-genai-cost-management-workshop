@@ -4,7 +4,7 @@ Cost-and-latency optimization levers for when the lower tiers aren't enough - co
 
 ## Overview
 
-Each script is a standalone, runnable demonstration of one lever, matching the repo's Python sample style. They are implemented with plain boto3 (no agent framework) so they run with the repo's base dependencies, and each prints the token signal that makes the lever's payoff visible.
+Each script is a standalone, runnable demonstration of one lever, matching the repo's Python sample style. `03-1` and `03-2` are implemented with plain boto3 (no agent framework); `03-3` uses a Strands agent with a local MCP server, because the lever is about how an agent loads MCP tools. All of them run with the repo's base dependencies, and each prints the token signal that makes the lever's payoff visible.
 
 ## Models Used
 
@@ -21,12 +21,14 @@ The samples use the workshop's allowed models via Global cross-region inference 
 |--------|-------|----------------------|
 | `03-1_harness_engineering.py` | Harness Engineering | A minimal but real agent loop (call, parse, run tools, check stop) with a turn-budget guardrail, plus a lean-vs-bloated context comparison showing tokens re-sent every turn |
 | `03-2_sub_agent_delegation.py` | Sub-Agent Delegation | An orchestrator-worker split - a cheap Haiku worker digests a large document, and the expensive Claude 5 Sonnet lead reasons over only the compact summary - vs a single-agent baseline |
+| `03-3_dynamic_tool_infrastructure.py` | Dynamic Tool Infrastructure | The same Strands agent answers one query against a local MCP server twice - once loading all 101 tools, once with a tool filter that loads only the one it needs - showing ~93% fewer input tokens for the same answer |
 
 Run any script directly:
 
 ```bash
 python 03-1_harness_engineering.py
 python 03-2_sub_agent_delegation.py
+python 03-3_dynamic_tool_infrastructure.py
 ```
 
 ## The Levers
@@ -39,12 +41,16 @@ The model is one component; the harness is the deterministic scaffolding around 
 
 A single agent carries every tool result and intermediate step in one context window that is re-sent every turn. Delegation breaks this with an orchestrator-worker split: a **lead** plans and answers; a **worker** does the token-heavy subtask (search, extract, summarize) in its own isolated context and returns only a compact result. The cost lever is the model choice - route the worker to a cheap model and keep the strong model on the lead, where it sees only the question and the compressed result. The sample shows the expensive lead using ~96% fewer input tokens than a single-agent baseline that ingests the whole document itself. Mind the orchestration overhead: every delegation is a separate call, so make sure the lead's context savings exceed it - and a worker with bad tool descriptions is just bad, faster, so fix the harness (03-1) first.
 
+### 3. Dynamic Tool Infrastructure
+
+Every tool an agent can call - its name, description, and input schema - is sent to the model on every call and billed as input tokens. Plug an agent into a large MCP server and it pays for the whole catalog on every request, even when the task needs one tool; and because an agent makes at least two model calls per query (pick the tool, then answer), the unused catalog is paid for again and again. The sample starts a local MCP server (stdio, nothing deployed) that exposes 101 tools - one real `get_weather` and 100 fake business tools - and runs the same Strands agent on the same question twice: once with the **full catalog**, once with a **tool filter** on the MCP client (`tool_filters={"allowed": ["get_weather"]}`). The filtered run uses ~93% fewer input tokens and is ~12x cheaper per query for the same answer. The fix is configuration, not code: give each agent a focused job and load only the tools that job needs. When the catalog is too large or changes too often to filter by hand, move tool selection into the infrastructure - see Tool Search via MCP Gateway below.
+
 ## Covered as concept / reference (no sample here)
 
 Two levers from the source playbook are documented as concepts rather than runnable samples in this repo:
 
 - **GEPA / DSPy** - open-source programmatic prompt optimization. A real `compile()` needs a training set and runs for minutes to hours, so it is a reference pattern, not a live sample. The managed counterpart is Bedrock Advanced Prompt Optimization.
-- **Tool Search via MCP Gateway** - AgentCore Gateway semantic tool search. It depends on provisioned infrastructure (a gateway, Cognito, Lambda targets), so it belongs with a full deployment rather than a standalone script.
+- **Tool Search via MCP Gateway** - AgentCore Gateway semantic tool search. It depends on provisioned infrastructure (a gateway, Cognito, Lambda targets), so it belongs with a full deployment rather than a standalone script. For the problem it solves, see `03-3`: the same agent sends ~15x more input tokens when it loads a full MCP catalog instead of only the tools it needs. Gateway tool search automates that selection per query.
 
 ## Prerequisites
 
