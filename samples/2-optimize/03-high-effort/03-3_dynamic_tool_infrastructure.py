@@ -80,7 +80,7 @@ mcp_server = MCPServer("demo-tool-catalog", log_level="WARNING")
 @mcp_server.tool()
 def get_weather(city: str) -> str:
     """Get the current weather for a city."""
-    return f"25°C and sunny in {city}"
+    return f"25 degrees C and sunny in {city}"
 
 
 # Building blocks for the fake tools: 20 domains x 5 actions = 100 tool names,
