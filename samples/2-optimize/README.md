@@ -52,8 +52,9 @@ The [03-high-effort](03-high-effort/) tier has runnable samples today:
 |--------|-------|----------------------|
 | [03-1_harness_engineering.py](03-high-effort/03-1_harness_engineering.py) | Harness Engineering | A minimal agent loop (call/parse/tool/check-stop) with a turn-budget guardrail, plus a lean-vs-bloated context comparison |
 | [03-2_sub_agent_delegation.py](03-high-effort/03-2_sub_agent_delegation.py) | Sub-Agent Delegation | A cheap Haiku worker digests a large document; the Claude 5 Sonnet lead reasons over only the summary - ~96% fewer tokens on the pricey model |
+| [03-3_dynamic_tool_infrastructure.py](03-high-effort/03-3_dynamic_tool_infrastructure.py) | Dynamic Tool Infrastructure | The same Strands agent on a local MCP server, full 101-tool catalog vs a tool filter that loads only the one it needs - ~93% fewer input tokens |
 
-Two further levers from the playbook - GEPA/DSPy and Tool Search via MCP Gateway - are covered as concepts rather than runnable samples (they need a training set or provisioned infrastructure). See the [high-effort README](03-high-effort/README.md) for details.
+Two further levers from the playbook - GEPA/DSPy and Tool Search via MCP Gateway - are covered as concepts rather than runnable samples (they need a training set or provisioned infrastructure). `03-3` shows the problem Tool Search solves, with no infrastructure. See the [high-effort README](03-high-effort/README.md) for details.
 
 ## Models Used
 
