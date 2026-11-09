@@ -3,7 +3,7 @@ aws-bedrock-token-generator==1.1.0
 boto3==1.43.59
 requests==2.34.2
 openai==2.50.0
-litellm==1.94.3
+litellm==1.109.0.dev1
 strands-decider==0.1.0
 strands-agents[otel]==1.58.0
 mcp==2.1.1
