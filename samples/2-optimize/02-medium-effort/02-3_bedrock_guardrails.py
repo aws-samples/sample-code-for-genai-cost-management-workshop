@@ -1,5 +1,5 @@
 """
-Medium-Effort Optimization - Lever 08: Bedrock Guardrails
+Medium-Effort Optimization - Lever 09: Bedrock Guardrails
 
 Guardrails are sold as safety - block toxic prompts, refuse off-scope topics,
 redact PII. They are equally a cost-and-latency lever: a request blocked at the

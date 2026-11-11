@@ -1,5 +1,5 @@
 """
-Medium-Effort Optimization - Lever 05: Service Tiers (Flex)
+Medium-Effort Optimization - Lever 11: Service Tiers (Flex)
 
 Amazon Bedrock offers four service tiers for model inference: Reserved,
 Priority, Standard (the default), and Flex. The cost lever here is Flex:

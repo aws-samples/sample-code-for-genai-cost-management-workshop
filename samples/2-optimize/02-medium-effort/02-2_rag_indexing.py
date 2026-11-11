@@ -1,5 +1,5 @@
 """
-Medium-Effort Optimization - Lever 09: RAG / Indexing (the core concept)
+Medium-Effort Optimization - Lever 08: RAG / Indexing (the core concept)
 
 The instinct on a large knowledge source is to stuff it all into the prompt.
 That is expensive AND counterproductive: past a certain size accuracy drops
