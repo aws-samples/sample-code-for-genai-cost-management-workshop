@@ -23,6 +23,7 @@ The Claude samples use the workshop's allowed models via Global cross-region inf
 | `02-1_llm_routing.py` | LLM Routing | Labels each query simple/complex to route simple lookups to Haiku and complex ones to Claude 5 Sonnet - and compares two ways to make that call: a tiny Haiku LLM classifier vs the local Strands Decider decision model |
 | `02-2_rag_indexing.py` | RAG / Indexing | Sends the relevant slice of a catalog instead of the whole thing - naive full-catalog prompt vs loading only the relevant category, comparing input tokens |
 | `02-3_bedrock_guardrails.py` | Bedrock Guardrails | Creates a guardrail (denied topic + PII), applies it inline on a Converse call and standalone via `ApplyGuardrail`, then deletes it - blocked traffic never pays for inference |
+| `02-4_remove_extra_model_calls.py` | Remove Extra Model Calls | Processes support tickets two ways: five model calls per ticket (extract ID, compute total with tax, normalize date, check refund window, draft reply) vs Python for the four deterministic steps plus one model call for the reply, comparing model calls, tokens, latency, cost, and how many deterministic answers were correct |
 | `02-5_service_tiers.py` | Service Tiers (Flex) | Runs the same summarization task on Standard (`default`) vs Flex tier on `openai.gpt-oss-120b`, comparing tokens and latency via the OpenAI Chat Completions API, which returns the `service_tier` that served each request; Flex trades latency for a pricing discount |
 
 Run any script directly:
@@ -31,6 +32,7 @@ Run any script directly:
 python 02-1_llm_routing.py
 python 02-2_rag_indexing.py
 python 02-3_bedrock_guardrails.py
+python 02-4_remove_extra_model_calls.py
 python 02-5_service_tiers.py
 ```
 
@@ -57,6 +59,12 @@ Stuffing an entire knowledge source into the prompt is expensive and counterprod
 
 Guardrails are sold as safety, but they are equally a cost lever: a request blocked at the input layer never reaches the model, so you don't pay generation tokens on injection probes, jailbreaks, or off-topic traffic. The sample shows both application modes - inline on a Converse call, and the standalone `ApplyGuardrail` API that screens text without invoking a model, so you can place the check before retrieval, routing, or tool calls. Pricing is per ~1,000-character text unit, billed per policy evaluated, so blocking off-topic traffic saves the full request cost.
 
+### 4. Remove Extra Model Calls
+
+The cheapest model call is the one you never make. Pipelines accumulate "one more prompt" per step, but extracting an ID, adding up line items, converting a date, or checking a policy window are fixed rules that a few lines of Python do instantly, for free, and exactly. A model call for the same step costs tokens and latency, and can get arithmetic or date math wrong, and a wrong answer flows into every later step. Use code for deterministic steps and keep the model for reasoning and semantics: understanding what the customer wants and writing the reply.
+
+The sample runs five support tickets through both designs. The all-model design makes five calls per ticket, and each answer feeds the reply prompt. The hybrid design computes the order ID, total with tax, ISO date, and refund eligibility in Python (regex, `Decimal`, `datetime`, a lookup table) and makes one model call to draft the reply from those verified facts. For each ticket the sample prints the code's answer and the model's answer on adjacent lines and flags any difference. Order dates are set relative to today, so the refund-window tickets stay the same mix (eligible, ineligible, and one day either side of the 30-day limit) whenever you run it. The comparison table shows model calls, tokens, latency, cost, and how many of the 20 deterministic answers were correct. Model mistakes vary from run to run, but the call count and the cost gap do not. In a real pipeline, fall back to the model only for inputs your parser cannot handle, and confirm the output is unchanged on an eval set.
+
 ### 5. Service Tiers (Flex)
 
 Amazon Bedrock offers four service tiers: Reserved, Priority, Standard (the default), and Flex. For latency-tolerant, non-interactive workloads - model evaluations, content summarization, labeling/annotation, multistep agentic workflows - the Flex tier earns a pricing discount versus the Standard on-demand price in exchange for lower priority: during high demand, Flex requests get longer and more variable latency. The code change is small - set `service_tier` to `flex` on the request (the sample uses the OpenAI Chat Completions API on `bedrock-runtime`; Converse accepts it too, via `additionalModelRequestFields`) - but adopting it is a workload-routing decision: you identify which traffic can tolerate the latency, route it to Flex, and validate the tradeoff. Your on-demand quota is shared across the priority, default, and flex tiers, while Reserved capacity is separate. The discount is a billing effect you confirm in Cost Explorer, not a per-request number returned by the API; and the tier that served each request depends on the API you call. Chat Completions returns a top-level `service_tier` field in the response, which is why the sample uses it; Converse returns no tier field at all (no field, no header). For fleet-wide confirmation use the `ResolvedServiceTier` dimension in CloudWatch (or AWS CloudTrail events).
@@ -67,7 +75,7 @@ Flex is supported only by a specific model set - OpenAI gpt-oss (20b/120b), Deep
 
 - Python 3.12+
 - IAM credentials with the relevant permissions:
-  - Routing & RAG: `bedrock-runtime:Converse`
+  - Routing, RAG & removing extra model calls: `bedrock-runtime:Converse`
   - Guardrails: `bedrock:CreateGuardrail`, `bedrock:DeleteGuardrail`, `bedrock-runtime:Converse`, `bedrock-runtime:ApplyGuardrail`
 - Access to Claude Haiku 4.5 and Claude 5 Sonnet on Amazon Bedrock, plus `openai.gpt-oss-120b` in a Flex-supporting region for `02-5_service_tiers.py` (which authenticates the OpenAI SDK with a short-lived Bedrock API token minted from your IAM credentials via `aws-bedrock-token-generator`, already in `requirements.txt`)
 - Dependencies installed via `pip install -r requirements.txt` from the repository root
