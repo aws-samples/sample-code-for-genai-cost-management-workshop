@@ -20,7 +20,7 @@ The Claude samples use the workshop's allowed models via Global cross-region inf
 
 | Script | Lever | What it demonstrates |
 |--------|-------|----------------------|
-| `02-1_llm_routing.py` | LLM Routing | Labels each query simple/complex to route simple lookups to Haiku and complex ones to Claude 5 Sonnet - using a tiny Haiku LLM classifier, and measures what the classifier itself costs in latency and Bedrock spend |
+| `02-1_llm_routing.py` | LLM Routing | Labels each query simple/complex with a tiny Haiku classifier to route simple lookups to Haiku and complex ones to Claude 5 Sonnet, and measures the classifier's own latency and Bedrock cost |
 | `02-2_rag_indexing.py` | RAG / Indexing | Sends the relevant slice of a catalog instead of the whole thing - naive full-catalog prompt vs loading only the relevant category, comparing input tokens |
 | `02-3_bedrock_guardrails.py` | Bedrock Guardrails | Creates a guardrail (denied topic + PII), applies it inline on a Converse call and standalone via `ApplyGuardrail`, then deletes it - blocked traffic never pays for inference |
 | `02-4_remove_extra_model_calls.py` | Remove Extra Model Calls | Processes support tickets two ways: five model calls per ticket (extract ID, compute total with tax, normalize date, check refund window, draft reply) vs Python for the four deterministic steps plus one model call for the reply, comparing model calls, tokens, latency, cost, and how many deterministic answers were correct |
@@ -45,8 +45,6 @@ python 02-6_filter_tool_output.py
 Query complexity has a long tail: only ~20% of requests genuinely need a workhorse model; the rest are lookups a smaller model answers just as well at a fraction of the cost. A classifier labels each request, then routes it to the cheapest model that can handle it. Keep the classifier cheap and deterministic (low `maxTokens`, a stop sequence, cache its static prompt), and make sure the cheap path takes the majority of traffic. Confirm routed-down quality on your own eval set.
 
 The sample implements the routing *decision* as an **LLM classifier** (`run_llm_classification`): a tiny, deterministic Haiku Converse round-trip. Few-shot examples pin the output to one word and a stop sequence ends generation right after it, so it costs only a few output tokens per request. It prints each query's label and routed model, then the classifier's total latency, token counts, and Bedrock spend.
-
-> This sample isolates the routing *decision* only - there is no answering step. In the source notebook the answering model is a tool-backed agent; the routing logic is the same lever either way.
 
 ### 2. RAG / Indexing
 
