@@ -4,7 +4,6 @@ boto3==1.43.126
 requests==2.34.2
 openai==2.50.0
 litellm==1.108.3
-strands-decider==0.1.0
 strands-agents[otel]==1.64.0
 mcp==2.2.0
 aws-opentelemetry-distro==0.21.0

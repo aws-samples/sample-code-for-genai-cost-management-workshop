@@ -68,8 +68,6 @@ Most samples use the workshop's allowed models via Global cross-region inference
 | Amazon Nova 2 Lite | `global.amazon.nova-2-lite-v1:0` |
 | OpenAI gpt-oss-120b | `openai.gpt-oss-120b-1:0` |
 
-The LLM routing sample can also compare against the open-source [Strands Decider 2B](https://strandsagents.com/blog/introducing-strands-decider/) decision model. It runs locally, is optional, and is not a Bedrock model.
-
 ## Setup
 
 See the [main README](../../README.md) for environment setup, virtual environment creation, and dependency installation.
