@@ -23,7 +23,6 @@ The Claude samples use the workshop's allowed models via Global cross-region inf
 | `02-1_llm_routing.py` | LLM Routing | Labels each query simple/complex to route simple lookups to Haiku and complex ones to Claude 5 Sonnet - and compares two ways to make that call: a tiny Haiku LLM classifier vs the local Strands Decider decision model |
 | `02-2_rag_indexing.py` | RAG / Indexing | Sends the relevant slice of a catalog instead of the whole thing - naive full-catalog prompt vs loading only the relevant category, comparing input tokens |
 | `02-3_bedrock_guardrails.py` | Bedrock Guardrails | Creates a guardrail (denied topic + PII), applies it inline on a Converse call and standalone via `ApplyGuardrail`, then deletes it - blocked traffic never pays for inference |
-| `02-4_batch_inference.py` | Batch Inference | Builds a Converse-format JSONL batch and submits a `create_model_invocation_job` (50% of on-demand price) - live when configured, demo otherwise |
 | `02-5_service_tiers.py` | Service Tiers (Flex) | Runs the same summarization task on Standard (`default`) vs Flex tier on `openai.gpt-oss-120b`, comparing tokens and latency via the OpenAI Chat Completions API, which returns the `service_tier` that served each request; Flex trades latency for a pricing discount |
 
 Run any script directly:
@@ -32,7 +31,6 @@ Run any script directly:
 python 02-1_llm_routing.py
 python 02-2_rag_indexing.py
 python 02-3_bedrock_guardrails.py
-python 02-4_batch_inference.py
 python 02-5_service_tiers.py
 ```
 
@@ -59,10 +57,6 @@ Stuffing an entire knowledge source into the prompt is expensive and counterprod
 
 Guardrails are sold as safety, but they are equally a cost lever: a request blocked at the input layer never reaches the model, so you don't pay generation tokens on injection probes, jailbreaks, or off-topic traffic. The sample shows both application modes - inline on a Converse call, and the standalone `ApplyGuardrail` API that screens text without invoking a model, so you can place the check before retrieval, routing, or tool calls. Pricing is per ~1,000-character text unit, billed per policy evaluated, so blocking off-topic traffic saves the full request cost.
 
-### 4. Batch Inference
-
-For work that is not latency sensitive - embeddings, entity extraction, LLM-as-judge evaluations, bulk categorization or summarization - Bedrock batch inference runs asynchronously at 50% of the on-demand price. Same model, same output, half the cost. The sample builds a JSONL input in the Converse batch format (`recordId` + `modelInput`) and submits a `create_model_invocation_job`.
-
 ### 5. Service Tiers (Flex)
 
 Amazon Bedrock offers four service tiers: Reserved, Priority, Standard (the default), and Flex. For latency-tolerant, non-interactive workloads - model evaluations, content summarization, labeling/annotation, multistep agentic workflows - the Flex tier earns a pricing discount versus the Standard on-demand price in exchange for lower priority: during high demand, Flex requests get longer and more variable latency. The code change is small - set `service_tier` to `flex` on the request (the sample uses the OpenAI Chat Completions API on `bedrock-runtime`; Converse accepts it too, via `additionalModelRequestFields`) - but adopting it is a workload-routing decision: you identify which traffic can tolerate the latency, route it to Flex, and validate the tradeoff. Your on-demand quota is shared across the priority, default, and flex tiers, while Reserved capacity is separate. The discount is a billing effect you confirm in Cost Explorer, not a per-request number returned by the API; and the tier that served each request depends on the API you call. Chat Completions returns a top-level `service_tier` field in the response, which is why the sample uses it; Converse returns no tier field at all (no field, no header). For fleet-wide confirmation use the `ResolvedServiceTier` dimension in CloudWatch (or AWS CloudTrail events).
@@ -75,23 +69,10 @@ Flex is supported only by a specific model set - OpenAI gpt-oss (20b/120b), Deep
 - IAM credentials with the relevant permissions:
   - Routing & RAG: `bedrock-runtime:Converse`
   - Guardrails: `bedrock:CreateGuardrail`, `bedrock:DeleteGuardrail`, `bedrock-runtime:Converse`, `bedrock-runtime:ApplyGuardrail`
-  - Batch inference: `bedrock:CreateModelInvocationJob`, an S3 bucket, and a Bedrock batch service role
 - Access to Claude Haiku 4.5 and Claude 5 Sonnet on Amazon Bedrock, plus `openai.gpt-oss-120b` in a Flex-supporting region for `02-5_service_tiers.py` (which authenticates the OpenAI SDK with a short-lived Bedrock API token minted from your IAM credentials via `aws-bedrock-token-generator`, already in `requirements.txt`)
 - Dependencies installed via `pip install -r requirements.txt` from the repository root
 - `AWS_REGION` set (defaults to `us-east-1` if unset)
 - OPTIONAL, for the decision-model path in `02-1_llm_routing.py`: `pip install strands-decider`. This installs the Python package only; the ~1.9B model weights are downloaded separately from Hugging Face into `~/.cache/huggingface/` the first time the server starts (not during `pip install`), so expect a one-time delay on that first run. It runs on CPU, GPU, or Apple silicon. The sample starts and stops the server itself and skips this path cleanly if the CLI is absent.
-
-## Running the Batch Inference Sample
-
-`02-4_batch_inference.py` always builds and shows the JSONL locally. It submits a real job only when both environment variables are set:
-
-```bash
-export BEDROCK_BATCH_BUCKET=your-s3-bucket
-export BEDROCK_BATCH_ROLE_ARN=arn:aws:iam::<account>:role/<batch-service-role>
-python 02-4_batch_inference.py
-```
-
-Without them it prints the sample records and the exact API call it would make, then exits cleanly - so you can inspect the format without provisioning S3 or an IAM role. A live batch job runs asynchronously (minutes to hours) and has a minimum record count (commonly 100 records per job).
 
 ## Running the Decision-Model Comparison
 
