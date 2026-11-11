@@ -19,8 +19,8 @@ pytest run with one failing test) to Claude Haiku 4.5 three ways:
 - PYTHON FILTER: a small hand-written filter tuned to this tool
 - RTK: the open-source rtk CLI (https://github.com/rtk-ai/rtk), which ships
   ready-made filters for common developer commands. Optional: if rtk is not
-  installed the sample offers to install it (you confirm first), and skips
-  this row cleanly if you decline.
+  installed the sample installs it with the project's install script, and
+  skips this row cleanly if the install fails.
 
 You will learn how to:
 - Strip ANSI codes, package output, log noise, and repeated warnings
@@ -81,9 +81,12 @@ ROOT_CAUSE_RE = re.compile(
     r"exclusive|inclusive|boundary|>=|strictly|greater than|> ?100|off-by-one", re.I
 )
 
-# rtk is optional. If it is missing, the sample offers to install it with the
-# project's official install script. Set OFFER_RTK_INSTALL = False to never ask.
-OFFER_RTK_INSTALL = True
+# rtk is optional. If it is missing, the sample installs it with the project's
+# official install script. Set RTK_INSTALL to:
+#   "auto"  - install without asking (default)
+#   "ask"   - show the command and ask first (skipped when not interactive)
+#   "never" - do not install; the rtk row is skipped if rtk is missing
+RTK_INSTALL = "auto"
 RTK_INSTALL_CMD = (
     "curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh"
 )
@@ -240,25 +243,31 @@ def find_rtk() -> str | None:
     return candidate if os.access(candidate, os.X_OK) else None
 
 
-def offer_rtk_install() -> str | None:
-    """Ask before running the install script. Returns the rtk path, or None."""
-    if not OFFER_RTK_INSTALL:
+def install_rtk() -> str | None:
+    """Install rtk per RTK_INSTALL. Returns the rtk path, or None."""
+    if RTK_INSTALL == "never":
         return None
-    print("  rtk is not installed. It can be installed with the project's install script:")
+    print("  rtk is not installed. Installing it with the project's install script:")
     print(f"    {RTK_INSTALL_CMD}")
     print("  The script downloads a checksum-verified binary into ~/.local/bin.")
-    if not sys.stdin.isatty():
-        print("  Not an interactive terminal, so the install is skipped.\n")
-        return None
-    try:
-        answer = input("  Install rtk now? [y/N] ").strip().lower()
-    except (EOFError, KeyboardInterrupt):
-        answer = ""
+    if RTK_INSTALL == "ask":
+        if not sys.stdin.isatty():
+            print("  Not an interactive terminal, so the install is skipped.\n")
+            return None
+        try:
+            answer = input("  Install rtk now? [y/N] ").strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            answer = ""
+        if answer not in ("y", "yes"):
+            print()
+            return None
     print()
-    if answer not in ("y", "yes"):
-        return None
     # The command is a constant defined above, not built from user input.
-    result = subprocess.run(RTK_INSTALL_CMD, shell=True)
+    try:
+        result = subprocess.run(RTK_INSTALL_CMD, shell=True, timeout=180)
+    except subprocess.TimeoutExpired:
+        print("\n  rtk install timed out, skipping the rtk row.\n")
+        return None
     print()
     if result.returncode != 0:
         print("  rtk install failed, skipping the rtk row.\n")
@@ -385,7 +394,7 @@ def main():
     print("Step 2 of 4: filter the output before it goes to the model")
     filtered = filter_tool_output(raw)
     show("PYTHON FILTER", filtered, max_lines=20)
-    rtk_path = find_rtk() or offer_rtk_install()
+    rtk_path = find_rtk() or install_rtk()
     rtk_filtered = filter_with_rtk(rtk_path, raw) if rtk_path else None
     if rtk_filtered is not None:
         show("RTK (rtk pipe -f pytest)", rtk_filtered, max_lines=20)

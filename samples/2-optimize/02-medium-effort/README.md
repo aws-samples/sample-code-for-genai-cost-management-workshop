@@ -25,7 +25,7 @@ The Claude samples use the workshop's allowed models via Global cross-region inf
 | `02-3_bedrock_guardrails.py` | Bedrock Guardrails | Creates a guardrail (denied topic + PII), applies it inline on a Converse call and standalone via `ApplyGuardrail`, then deletes it - blocked traffic never pays for inference |
 | `02-4_remove_extra_model_calls.py` | Remove Extra Model Calls | Processes support tickets two ways: five model calls per ticket (extract ID, compute total with tax, normalize date, check refund window, draft reply) vs Python for the four deterministic steps plus one model call for the reply, comparing model calls, tokens, latency, cost, and how many deterministic answers were correct |
 | `02-5_service_tiers.py` | Service Tiers (Flex) | Runs the same summarization task on Standard (`default`) vs Flex tier on `openai.gpt-oss-120b`, comparing tokens and latency via the OpenAI Chat Completions API, which returns the `service_tier` that served each request; Flex trades latency for a pricing discount |
-| `02-6_filter_tool_output.py` | Filter Tool Output | Sends the output of a simulated CI step (pip install plus a pytest run with one failure) to the model raw, through a hand-written Python filter, and through the open-source `rtk` CLI (offered for install if missing), comparing input tokens, cost, and whether the answer still finds the root cause |
+| `02-6_filter_tool_output.py` | Filter Tool Output | Sends the output of a simulated CI step (pip install plus a pytest run with one failure) to the model raw, through a hand-written Python filter, and through the open-source `rtk` CLI (installed automatically if missing), comparing input tokens, cost, and whether the answer still finds the root cause |
 
 Run any script directly:
 
@@ -89,13 +89,13 @@ The sample builds the output of a simulated CI step (a `pip install` followed by
 - Dependencies installed via `pip install -r requirements.txt` from the repository root
 - `AWS_REGION` set (defaults to `us-east-1` if unset)
 - OPTIONAL, for the decision-model path in `02-1_llm_routing.py`: `pip install strands-decider`. This installs the Python package only; the ~1.9B model weights are downloaded separately from Hugging Face into `~/.cache/huggingface/` the first time the server starts (not during `pip install`), so expect a one-time delay on that first run. It runs on CPU, GPU, or Apple silicon. The sample starts and stops the server itself and skips this path cleanly if the CLI is absent.
-- OPTIONAL, for the rtk row in `02-6_filter_tool_output.py`: the `rtk` CLI from [rtk-ai/rtk](https://github.com/rtk-ai/rtk), a single Rust binary (install the rtk-ai project, not another tool that shares the name). If `rtk` is not on your `PATH`, the sample shows the install command and asks `Install rtk now? [y/N]` before running anything; it never installs without your confirmation, and skips the rtk row if you decline or the terminal is not interactive. To install it yourself first:
+- OPTIONAL, for the rtk row in `02-6_filter_tool_output.py`: the `rtk` CLI from [rtk-ai/rtk](https://github.com/rtk-ai/rtk), a single Rust binary (install the rtk-ai project, not another tool that shares the name). If `rtk` is not on your `PATH`, the sample prints the install command below and runs it for you (it needs network access to GitHub), then continues; if the install fails it skips the rtk row. To install it yourself first:
 
   ```bash
   curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
   ```
 
-  The script downloads a checksum-verified binary into `~/.local/bin`. Set `OFFER_RTK_INSTALL = False` at the top of the sample to never be asked.
+  The script downloads a checksum-verified binary into `~/.local/bin`. At the top of the sample, `RTK_INSTALL` is `"auto"` by default; set it to `"ask"` to be asked first, or `"never"` to skip the install.
 
 ## Running the Decision-Model Comparison
 
