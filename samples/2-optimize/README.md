@@ -41,6 +41,7 @@ The [02-medium-effort](02-medium-effort/) tier has runnable samples today, one p
 | [02-3_bedrock_guardrails.py](02-medium-effort/02-3_bedrock_guardrails.py) | Bedrock Guardrails | Inline and standalone `ApplyGuardrail` - blocked traffic never pays for inference |
 | [02-4_remove_extra_model_calls.py](02-medium-effort/02-4_remove_extra_model_calls.py) | Remove Extra Model Calls | Support tickets with every step on the model vs Python for the deterministic steps and one model call for the reply, comparing calls, tokens, latency, cost, and correctness |
 | [02-5_service_tiers.py](02-medium-effort/02-5_service_tiers.py) | Service Tiers (Flex) | Same summarization task on Standard vs Flex tier on `openai.gpt-oss-120b`, comparing tokens and latency - Flex trades latency for a pricing discount |
+| [02-6_filter_tool_output.py](02-medium-effort/02-6_filter_tool_output.py) | Filter Tool Output | A noisy CI step output sent raw vs through a Python filter vs the optional `rtk` CLI, comparing input tokens, cost, and whether the answer still finds the root cause |
 
 See the [medium-effort README](02-medium-effort/README.md) for details on each lever and model-compatibility notes.
 

@@ -25,6 +25,7 @@ The Claude samples use the workshop's allowed models via Global cross-region inf
 | `02-3_bedrock_guardrails.py` | Bedrock Guardrails | Creates a guardrail (denied topic + PII), applies it inline on a Converse call and standalone via `ApplyGuardrail`, then deletes it - blocked traffic never pays for inference |
 | `02-4_remove_extra_model_calls.py` | Remove Extra Model Calls | Processes support tickets two ways: five model calls per ticket (extract ID, compute total with tax, normalize date, check refund window, draft reply) vs Python for the four deterministic steps plus one model call for the reply, comparing model calls, tokens, latency, cost, and how many deterministic answers were correct |
 | `02-5_service_tiers.py` | Service Tiers (Flex) | Runs the same summarization task on Standard (`default`) vs Flex tier on `openai.gpt-oss-120b`, comparing tokens and latency via the OpenAI Chat Completions API, which returns the `service_tier` that served each request; Flex trades latency for a pricing discount |
+| `02-6_filter_tool_output.py` | Filter Tool Output | Sends the output of a simulated CI step (pip install plus a pytest run with one failure) to the model raw, through a hand-written Python filter, and through the open-source `rtk` CLI (offered for install if missing), comparing input tokens, cost, and whether the answer still finds the root cause |
 
 Run any script directly:
 
@@ -34,6 +35,7 @@ python 02-2_rag_indexing.py
 python 02-3_bedrock_guardrails.py
 python 02-4_remove_extra_model_calls.py
 python 02-5_service_tiers.py
+python 02-6_filter_tool_output.py
 ```
 
 ## The Levers
@@ -71,16 +73,29 @@ Amazon Bedrock offers four service tiers: Reserved, Priority, Standard (the defa
 
 Flex is supported only by a specific model set - OpenAI gpt-oss (20b/120b), DeepSeek V3.1, Qwen3 variants, and Amazon Nova Pro/Premier - NOT Anthropic Claude and NOT the lighter Nova models, which is why this sample runs on `openai.gpt-oss-120b` instead of the workshop Claude models. Availability is also region-gated. Check "Models at a glance" for the current, authoritative per-model and per-region supported-tier list: https://docs.aws.amazon.com/bedrock/latest/userguide/service-tiers-inference.html
 
+### 6. Filter Tool Output
+
+When an agent runs a command, the raw output usually goes straight back to the model, and most of it is noise for the question at hand: install progress bars, ANSI color codes, INFO and DEBUG log lines, the same deprecation warning repeated for every test, and a row of dots per passing test. You pay input tokens for all of it, and in an agent loop you pay again on every later turn because the history is resent. Filter the tool result in code before it reaches the model: strip console noise, collapse repeated warnings, drop logs and package output, and keep the failure, its assertion message, and the final summary line.
+
+The sample builds the output of a simulated CI step (a `pip install` followed by a `pytest` run with one failing test) so every run is identical and needs no network or test project. It asks Haiku 4.5 the same question with three versions of that output: raw, a short hand-written Python filter tuned to the tool, and the open-source [rtk](https://github.com/rtk-ai/rtk) CLI (`rtk pipe -f pytest`), which ships ready-made filters for common developer commands. The comparison table shows characters, input tokens, cost, and whether the answer still finds the root cause. The root cause here is a single WARNING log line (the discount threshold is exclusive), so a general-purpose filter that drops log lines saves the most tokens but can lose the clue. Filtering should remove noise, not signal, so check the answer after changing a filter (the same eval-set habit as the low-effort evaluation sample) and keep the full output somewhere the agent can fetch it on demand.
+
 ## Prerequisites
 
 - Python 3.12+
 - IAM credentials with the relevant permissions:
-  - Routing, RAG & removing extra model calls: `bedrock-runtime:Converse`
+  - Routing, RAG, removing extra model calls & filtering tool output: `bedrock-runtime:Converse`
   - Guardrails: `bedrock:CreateGuardrail`, `bedrock:DeleteGuardrail`, `bedrock-runtime:Converse`, `bedrock-runtime:ApplyGuardrail`
 - Access to Claude Haiku 4.5 and Claude 5 Sonnet on Amazon Bedrock, plus `openai.gpt-oss-120b` in a Flex-supporting region for `02-5_service_tiers.py` (which authenticates the OpenAI SDK with a short-lived Bedrock API token minted from your IAM credentials via `aws-bedrock-token-generator`, already in `requirements.txt`)
 - Dependencies installed via `pip install -r requirements.txt` from the repository root
 - `AWS_REGION` set (defaults to `us-east-1` if unset)
 - OPTIONAL, for the decision-model path in `02-1_llm_routing.py`: `pip install strands-decider`. This installs the Python package only; the ~1.9B model weights are downloaded separately from Hugging Face into `~/.cache/huggingface/` the first time the server starts (not during `pip install`), so expect a one-time delay on that first run. It runs on CPU, GPU, or Apple silicon. The sample starts and stops the server itself and skips this path cleanly if the CLI is absent.
+- OPTIONAL, for the rtk row in `02-6_filter_tool_output.py`: the `rtk` CLI from [rtk-ai/rtk](https://github.com/rtk-ai/rtk), a single Rust binary (install the rtk-ai project, not another tool that shares the name). If `rtk` is not on your `PATH`, the sample shows the install command and asks `Install rtk now? [y/N]` before running anything; it never installs without your confirmation, and skips the rtk row if you decline or the terminal is not interactive. To install it yourself first:
+
+  ```bash
+  curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
+  ```
+
+  The script downloads a checksum-verified binary into `~/.local/bin`. Set `OFFER_RTK_INSTALL = False` at the top of the sample to never be asked.
 
 ## Running the Decision-Model Comparison
 

@@ -44,7 +44,7 @@ Once you can see where spend goes, the optimize samples show how to reduce it, o
 | Tier | Levers |
 |------|--------|
 | Low effort | Model selection, prompt design, output and reasoning limits, prompt caching, retry and turn limits, evaluation |
-| Medium effort | LLM routing, RAG / indexing, Bedrock Guardrails, removing extra model calls, service tiers (Flex) |
+| Medium effort | LLM routing, RAG / indexing, Bedrock Guardrails, removing extra model calls, service tiers (Flex), filtering tool output |
 | High effort | Harness engineering, sub-agent delegation |
 
 ## Repository Structure
@@ -63,7 +63,7 @@ samples/
 │   └── 7-litellm/                        # LiteLLM proxy for multi-provider tracking
 └── 2-optimize/                           # Cost reduction: spend less without sacrificing quality
     ├── 01-low-effort/                    # Model selection, prompt design, output limits, caching, retry limits, eval
-    ├── 02-medium-effort/                 # LLM routing, RAG/indexing, guardrails, extra model calls, service tiers (Flex)
+    ├── 02-medium-effort/                 # LLM routing, RAG/indexing, guardrails, extra model calls, service tiers, tool output
     └── 03-high-effort/                   # Harness engineering, sub-agent delegation
 ```
 
@@ -115,7 +115,7 @@ By the end of this workshop, you will be able to:
 6. Attribute costs for Amazon AgentCore agent workloads across tasks and sessions
 7. Combine multiple attribution methods for complete cost visibility
 8. Build cost dashboards using Cost Explorer, CUR 2.0, and QuickSight
-9. Reduce spend with Bedrock cost-optimization levers - model selection, prompt design and caching, routing, RAG, guardrails, removing extra model calls, service tiers, and agent-harness patterns
+9. Reduce spend with Bedrock cost-optimization levers - model selection, prompt design and caching, routing, RAG, guardrails, removing extra model calls, service tiers, filtering tool output, and agent-harness patterns
 
 ## Target Audience
 
