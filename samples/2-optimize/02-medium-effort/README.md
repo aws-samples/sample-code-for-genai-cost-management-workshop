@@ -21,8 +21,8 @@ The Claude samples use the workshop's allowed models via Global cross-region inf
 | Script | Lever | What it demonstrates |
 |--------|-------|----------------------|
 | `02-1_llm_routing.py` | LLM Routing | Labels each query simple/complex to route simple lookups to Haiku and complex ones to Claude 5 Sonnet - and compares two ways to make that call: a tiny Haiku LLM classifier vs the local Strands Decider decision model |
-| `02-2_bedrock_guardrails.py` | Bedrock Guardrails | Creates a guardrail (denied topic + PII), applies it inline on a Converse call and standalone via `ApplyGuardrail`, then deletes it - blocked traffic never pays for inference |
-| `02-3_rag_indexing.py` | RAG / Indexing | Sends the relevant slice of a catalog instead of the whole thing - naive full-catalog prompt vs loading only the relevant category, comparing input tokens |
+| `02-2_rag_indexing.py` | RAG / Indexing | Sends the relevant slice of a catalog instead of the whole thing - naive full-catalog prompt vs loading only the relevant category, comparing input tokens |
+| `02-3_bedrock_guardrails.py` | Bedrock Guardrails | Creates a guardrail (denied topic + PII), applies it inline on a Converse call and standalone via `ApplyGuardrail`, then deletes it - blocked traffic never pays for inference |
 | `02-4_batch_inference.py` | Batch Inference | Builds a Converse-format JSONL batch and submits a `create_model_invocation_job` (50% of on-demand price) - live when configured, demo otherwise |
 | `02-5_service_tiers.py` | Service Tiers (Flex) | Runs the same summarization task on Standard (`default`) vs Flex tier on `openai.gpt-oss-120b`, comparing tokens and latency via the OpenAI Chat Completions API, which returns the `service_tier` that served each request; Flex trades latency for a pricing discount |
 
@@ -30,8 +30,8 @@ Run any script directly:
 
 ```bash
 python 02-1_llm_routing.py
-python 02-2_bedrock_guardrails.py
-python 02-3_rag_indexing.py
+python 02-2_rag_indexing.py
+python 02-3_bedrock_guardrails.py
 python 02-4_batch_inference.py
 python 02-5_service_tiers.py
 ```
@@ -51,13 +51,13 @@ The decision model is served locally over HTTP (`POST /v1/systemone`). Serving i
 
 > This sample isolates the routing *decision* only - there is no answering step. In the source notebook the answering model is a tool-backed agent; the routing logic is the same lever either way.
 
-### 2. Bedrock Guardrails
-
-Guardrails are sold as safety, but they are equally a cost lever: a request blocked at the input layer never reaches the model, so you don't pay generation tokens on injection probes, jailbreaks, or off-topic traffic. The sample shows both application modes - inline on a Converse call, and the standalone `ApplyGuardrail` API that screens text without invoking a model, so you can place the check before retrieval, routing, or tool calls. Pricing is per ~1,000-character text unit, billed per policy evaluated, so blocking off-topic traffic saves the full request cost.
-
-### 3. RAG / Indexing
+### 2. RAG / Indexing
 
 Stuffing an entire knowledge source into the prompt is expensive and counterproductive - past a certain size accuracy drops as the model underweights information buried mid-prompt ("lost in the middle"). Retrieval inverts it: index the corpus once, then per query pull in only the relevant slice. This sample teaches the concept **without a vector database** - a fake 10-category, 100-product catalog stands in for the corpus, one file per category is the index, and picking the file for the question's category stands in for retrieval. The result: the same answer at roughly 89% fewer input tokens. A real system swaps file-selection for embedding search over chunks (e.g. Amazon Bedrock Knowledge Bases), adds metadata filtering and reranking, and keeps retrieved chunks *after* any `cachePoint`.
+
+### 3. Bedrock Guardrails
+
+Guardrails are sold as safety, but they are equally a cost lever: a request blocked at the input layer never reaches the model, so you don't pay generation tokens on injection probes, jailbreaks, or off-topic traffic. The sample shows both application modes - inline on a Converse call, and the standalone `ApplyGuardrail` API that screens text without invoking a model, so you can place the check before retrieval, routing, or tool calls. Pricing is per ~1,000-character text unit, billed per policy evaluated, so blocking off-topic traffic saves the full request cost.
 
 ### 4. Batch Inference
 

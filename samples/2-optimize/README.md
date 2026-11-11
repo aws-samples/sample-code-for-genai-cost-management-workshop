@@ -37,8 +37,8 @@ The [02-medium-effort](02-medium-effort/) tier has runnable samples today, one p
 | Script | Lever | What it demonstrates |
 |--------|-------|----------------------|
 | [02-1_llm_routing.py](02-medium-effort/02-1_llm_routing.py) | LLM Routing | A tiny Haiku classifier routes simple lookups to Haiku and complex queries to Claude 5 Sonnet |
-| [02-2_bedrock_guardrails.py](02-medium-effort/02-2_bedrock_guardrails.py) | Bedrock Guardrails | Inline and standalone `ApplyGuardrail` - blocked traffic never pays for inference |
-| [02-3_rag_indexing.py](02-medium-effort/02-3_rag_indexing.py) | RAG / Indexing | Send only the relevant catalog slice instead of the whole corpus (no vector DB), comparing input tokens |
+| [02-2_rag_indexing.py](02-medium-effort/02-2_rag_indexing.py) | RAG / Indexing | Send only the relevant catalog slice instead of the whole corpus (no vector DB), comparing input tokens |
+| [02-3_bedrock_guardrails.py](02-medium-effort/02-3_bedrock_guardrails.py) | Bedrock Guardrails | Inline and standalone `ApplyGuardrail` - blocked traffic never pays for inference |
 | [02-4_batch_inference.py](02-medium-effort/02-4_batch_inference.py) | Batch Inference | A Converse-format JSONL batch job at 50% of the on-demand price |
 | [02-5_service_tiers.py](02-medium-effort/02-5_service_tiers.py) | Service Tiers (Flex) | Same summarization task on Standard vs Flex tier on `openai.gpt-oss-120b`, comparing tokens and latency - Flex trades latency for a pricing discount |
 
