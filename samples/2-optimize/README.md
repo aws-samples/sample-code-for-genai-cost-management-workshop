@@ -51,11 +51,12 @@ The [03-high-effort](03-high-effort/) tier has runnable samples today:
 
 | Script | Lever | What it demonstrates |
 |--------|-------|----------------------|
+| [03-1_memory_storage_tiers.py](03-high-effort/03-1_memory_storage_tiers.py) | Memory Storage Tiers | A local simulation: hot memory stays in the prompt and old memory is searched on demand, answering the same questions as keeping everything in the prompt with ~95% fewer input tokens |
 | [03-2_dynamic_tool_infrastructure.py](03-high-effort/03-2_dynamic_tool_infrastructure.py) | Dynamic Tool Infrastructure | The same Strands agent on a local MCP server, full 101-tool catalog vs a tool filter that loads only the one it needs - ~93% fewer input tokens |
 | [03-4_multi_agent_orchestration.py](03-high-effort/03-4_multi_agent_orchestration.py) | Multi-Agent Orchestration | A single Claude 5 Sonnet agent vs an uncapped split (one Haiku worker per section) vs a capped split (a fixed number of workers), comparing agents, tokens, latency, and total cost |
 | [03-6_human_escalation_path.py](03-high-effort/03-6_human_escalation_path.py) | Human Escalation Path | N is derived from eval results, then tasks that exceed N turns are handed to a human with a note built by code, comparing turns, tokens, and cost against no escalation |
 
-File numbers follow the deck order for the six high-effort levers, so the gaps (03-1 memory storage tiers, 03-3 long-running agent state, 03-5 security and permission boundaries) are levers without a runnable sample yet. See the [high-effort README](03-high-effort/README.md) for details.
+File numbers follow the deck order for the six high-effort levers, so the gaps (03-3 long-running agent state, 03-5 security and permission boundaries) are levers without a runnable sample yet. See the [high-effort README](03-high-effort/README.md) for details.
 
 ## Models Used
 

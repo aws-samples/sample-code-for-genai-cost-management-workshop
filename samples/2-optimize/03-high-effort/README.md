@@ -19,6 +19,7 @@ The samples use the workshop's allowed models via Global cross-region inference 
 
 | Script | Lever | What it demonstrates |
 |--------|-------|----------------------|
+| `03-1_memory_storage_tiers.py` | 13 - Memory Storage Tiers | A local simulation of hot and cold memory tiers: hot facts stay in the prompt and old facts are searched on demand, answering the same questions as keeping everything in the prompt with ~95% fewer input tokens |
 | `03-2_dynamic_tool_infrastructure.py` | 14 - Dynamic Tool Infrastructure | The same Strands agent answers one query against a local MCP server twice - once loading all 101 tools, once with a tool filter that loads only the one it needs - showing ~93% fewer input tokens for the same answer |
 | `03-4_multi_agent_orchestration.py` | 16 - Multi-Agent Orchestration | The same question over a large document as a single Claude 5 Sonnet agent, an uncapped split (one Haiku worker per section), and a capped split (a fixed number of workers), comparing agents, tokens, latency, and total cost |
 | `03-6_human_escalation_path.py` | 18 - Human Escalation Path | A support agent runs an eval set, N is derived from the turns its resolved tasks needed, and tasks that exceed N are handed to a human with a note built by code, comparing turns, tokens, and cost against no escalation |
@@ -26,6 +27,7 @@ The samples use the workshop's allowed models via Global cross-region inference 
 Run any script directly:
 
 ```bash
+python 03-1_memory_storage_tiers.py
 python 03-2_dynamic_tool_infrastructure.py
 python 03-4_multi_agent_orchestration.py
 python 03-6_human_escalation_path.py
@@ -37,11 +39,14 @@ These levers from the deck do not have a sample yet:
 
 | Slot | Lever | Idea |
 |------|-------|------|
-| 03-1 | 13 - Memory Storage Tiers | Do not keep all agent memory in fast storage; move inactive memory to lower-cost tiers |
 | 03-3 | 15 - Long-Running Agent State | Save task state outside the context and resume from it instead of replaying the full history |
 | 03-5 | 17 - Security and Permission Boundaries | Enforce tool access in AgentCore Gateway Policy, not in the prompt |
 
 ## The Levers
+
+### Memory Storage Tiers (lever 13)
+
+An agent that keeps all of its memory in the prompt pays for every stored fact on every call, even though most old facts have nothing to do with the question. Memory only grows, so the cost per call grows with it. Tiering matches memory to how often it is used: **hot** facts (used recently) stay in the prompt, and **cold** facts (older) stay out of it and are searched only when a question needs one, loading just the top matches. The sample is a local simulation on Claude 5 Sonnet: 174 remembered facts about one customer, an age cutoff as the tier policy, and a keyword match as the cold search. It asks three questions both ways. Both designs answered all three correctly, and the tiered design used about 95% fewer input tokens (about 0.07x the cost) because it sent 6 facts per call instead of 174. The gap widens as memory grows. In production the tiers would be separate stores, for example Amazon Bedrock AgentCore Memory (short-term events and long-term records) or a cache plus a cheaper database.
 
 ### Dynamic Tool Infrastructure (lever 14)
 
