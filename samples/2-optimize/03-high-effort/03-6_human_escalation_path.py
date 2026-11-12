@@ -1,33 +1,25 @@
 """
 High-Effort Optimization - Lever 18: Human Escalation Path
 
-An agent loop that cannot finish a task keeps going. Every extra turn re-sends
-the whole growing context, so a stuck conversation is the most expensive kind:
-it pays more per turn than a healthy one, and it may never produce an answer.
+An agent that cannot finish a task keeps looping, and every extra turn re-sends
+the whole growing context. A human escalation path puts a ceiling on that waste:
+after N turns without an answer, the harness stops the agent and hands the case
+to a person.
 
-A human escalation path puts a ceiling on that waste. After N turns without a
-resolution, the harness stops the agent and hands the case to a person, with a
-short note of what was already tried. Two things make this work:
+The key is choosing N from evidence, not guessing:
+  1. Run your eval set with a generous turn limit.
+  2. Look at how many turns the tasks the agent DOES solve actually need.
+  3. Set N to that number. Too low and you escalate tasks the agent could have
+     solved. Too high and you pay for turns that never converge.
 
-  - N is set from evidence, not guessed. Run your eval set, look at how many
-    turns the tasks the agent DOES resolve actually need, and set N just above
-    that. Too low and you escalate tasks the agent could have solved. Too high
-    and you pay for turns that never converge.
-  - The handoff is built by code. The harness writes the note from its own log
-    of tool calls, so escalating costs zero extra model tokens.
-
-This sample runs a small customer-support agent (boto3 Converse tool loop) over
-an eval set. The order history is paged, so a lookup takes one turn per page:
-orders near the top are found in a couple of turns, orders further down take
-more, and orders that are not in the history at all keep the agent paging.
+This sample is a small order-lookup agent. The order list is paged, one order
+per call, so finding an order takes one turn per order. Orders near the top are
+found quickly, and orders that are not in the list keep the agent paging.
 
 You will learn how to:
-- Build a tool loop that stops at a turn limit and hands off instead of failing
-- Derive the escalation threshold N from eval results
+- Stop an agent loop at N turns and hand off instead of failing
+- Derive N from eval results
 - Compare turns, tokens, and cost with and without the escalation path
-
-NOTE: A hard turn cap (see the retry and turn limits sample) only stops the
-loop. An escalation path also routes the case to someone who can finish it.
 
 Prerequisites:
 - An AWS account with Amazon Bedrock access
@@ -45,79 +37,35 @@ import boto3
 # ============================================================
 
 REGION = os.environ.get("AWS_REGION", "us-east-1")
-
 RUNTIME = boto3.client("bedrock-runtime", region_name=REGION)
-
 HAIKU = "global.anthropic.claude-haiku-4-5-20251001-v1:0"
 
 # Pricing per 1M tokens (USD). Illustrative workshop values - always verify
 # current pricing at https://aws.amazon.com/bedrock/pricing/
-PRICING = {HAIKU: {"input": 1.00, "output": 5.00}}
+INPUT_PRICE, OUTPUT_PRICE = 1.00, 5.00
 
-# The generous cap used while measuring the agent on the eval set. Think of it
-# as "no real limit": high enough that every task the agent can solve finishes.
+# The generous limit used to measure the agent on the eval set.
 EVAL_MAX_TURNS = 8
 
 
 # ============================================================
-# Tools (a support backend with a paged order history)
+# The tool: one page of the order list per call
 # ============================================================
 
-# The customer's order history, newest first, 2 orders per page. Pages 1-4
-# hold the orders the eval set asks about; the rest is filler history.
-_HEAD_ORDERS = [
-    ("12345", "Wireless Headphones", "In transit", "2 business days"),
-    ("12346", "Notebook Set", "Delivered", "delivered"),
-    ("67890", "Mechanical Keyboard", "Delivered", "delivered"),
-    ("67891", "Water Bottle", "Delivered", "delivered"),
-    ("55555", "Phone Charger", "Shipped", "1 business day"),
-    ("55556", "Yoga Mat", "Delivered", "delivered"),
-    ("44444", "USB Hub", "Out for delivery", "today"),
-    ("44445", "Coffee Grinder", "Delivered", "delivered"),
-]
-_FILLER_ITEMS = [
+ORDERS = [
+    "Wireless Headphones", "Mechanical Keyboard", "Phone Charger", "USB Hub",
     "Garden Hose", "Bike Light", "Cutting Board", "Phone Case", "Throw Blanket",
-    "Plant Pot", "Desk Organizer", "Face Towel", "Wall Clock", "Mouse Pad",
-    "Candle Set", "Lunch Box", "Picture Frame", "Shower Curtain", "Door Mat",
-    "Key Holder", "Tea Kettle", "Pillow Case", "Coaster Set", "Shoe Rack",
+    "Plant Pot",
 ]
-ORDER_HISTORY = list(_HEAD_ORDERS) + [
-    (str(30000 + i), item, "Delivered", "delivered") for i, item in enumerate(_FILLER_ITEMS)
-]
-PAGE_SIZE = 2
-TOTAL_PAGES = len(ORDER_HISTORY) // PAGE_SIZE
-
-# Opaque cursors, so the model can only move forward one page at a time and
-# cannot guess page numbers (a real paged API works the same way).
-_CURSORS = [None] + [f"cur-{(i * 7919) % 9973:04d}" for i in range(1, TOTAL_PAGES)]
-
-_RETURN_POLICY = {
-    "audio": "45-day return window; opened items returnable only if defective.",
-    "accessories": "60-day return window; opened items accepted.",
-}
 
 
-def list_orders(cursor: str = "") -> str:
-    """Return one page of the order history plus the cursor for the next page."""
-    cursor = (cursor or "").strip()
-    if cursor and cursor not in _CURSORS:
-        return f"Invalid cursor '{cursor}'."
-    page = _CURSORS.index(cursor) if cursor else 0
-    start = page * PAGE_SIZE
-    lines = [
-        f"#{oid} {item} - {status} (ETA: {eta})"
-        for oid, item, status, eta in ORDER_HISTORY[start:start + PAGE_SIZE]
-    ]
-    if page + 1 < TOTAL_PAGES:
-        return "Orders: " + "; ".join(lines) + f". next_cursor: {_CURSORS[page + 1]}"
-    return "Orders: " + "; ".join(lines) + ". No more pages."
+def list_orders(cursor: str = "0") -> str:
+    """Return one order and the cursor for the next one."""
+    i = int(cursor or 0)
+    if i >= len(ORDERS):
+        return "No more orders."
+    return f"Order: {ORDERS[i]} - shipped, tracking TRK{100 + i}. next_cursor: {i + 1}"
 
-
-def get_return_policy(category: str) -> str:
-    return _RETURN_POLICY.get(category.strip().lower(), "30-day standard return window.")
-
-
-TOOL_IMPLS = {"list_orders": list_orders, "get_return_policy": get_return_policy}
 
 TOOL_CONFIG = {
     "tools": [
@@ -125,9 +73,9 @@ TOOL_CONFIG = {
             "toolSpec": {
                 "name": "list_orders",
                 "description": (
-                    "List the customer's orders, newest first, 2 per page, with item, "
-                    "status, and ETA. Omit cursor for the first page; pass the "
-                    "next_cursor from the previous page to get the following page."
+                    "Return one order from the customer's order list (item, status, "
+                    "tracking code) and a next_cursor. Start with cursor 0, then pass "
+                    "the next_cursor from the previous result."
                 ),
                 "inputSchema": {
                     "json": {
@@ -136,30 +84,15 @@ TOOL_CONFIG = {
                     }
                 },
             }
-        },
-        {
-            "toolSpec": {
-                "name": "get_return_policy",
-                "description": "Get the return policy for a product category (e.g. audio, accessories).",
-                "inputSchema": {
-                    "json": {
-                        "type": "object",
-                        "properties": {"category": {"type": "string"}},
-                        "required": ["category"],
-                    }
-                },
-            }
-        },
+        }
     ]
 }
 
 SYSTEM_PROMPT = (
-    "You are a concise customer-support agent. Use your tools to look up real "
-    "order and policy information before answering. The order history is paged "
-    "and can be long: if the order is not on the current page, keep fetching the "
-    "next page with next_cursor until you find it or no pages remain. Do not ask "
-    "the customer for more details until the whole history has been searched. "
-    "When you have the answer, reply directly without calling more tools."
+    "You are a concise customer-support agent. Find the customer's order with the "
+    "list_orders tool. The list is long: keep fetching the next order until you "
+    "find it or no orders remain, and do not ask the customer for more details "
+    "before then. Reply with the tracking code once you find it."
 )
 
 
@@ -167,36 +100,27 @@ SYSTEM_PROMPT = (
 # The eval set
 # ============================================================
 #
-# "expect" is text that only appears in a correct answer. Tasks with expect
-# None ask about an order that is not in the history, so the agent can never
-# resolve them - the right outcome for those is a handoff to a person.
+# "expect" is the tracking code a correct answer contains. Tasks with expect
+# None ask about an item that is not in the list, so the agent can never solve
+# them - the right outcome for those is a handoff to a person.
 
 EVAL_CASES = [
-    {"task": "What is the return policy for audio?", "expect": "45"},
-    {"task": "What is the return policy for accessories?", "expect": "60"},
-    {"task": "When will my Wireless Headphones order arrive?", "expect": "2 business days"},
-    {"task": "Has my Mechanical Keyboard order been delivered?", "expect": "Delivered"},
-    {"task": "What is the status of my Phone Charger order?", "expect": "Shipped"},
-    {"task": "What is the status of my USB Hub order?", "expect": "Out for delivery"},
-    {"task": "What is the status of my Desk Lamp order?", "expect": None},
-    {"task": "What is the status of my Standing Desk order?", "expect": None},
+    {"task": "Where is my Wireless Headphones order?", "expect": "TRK100"},
+    {"task": "Where is my Mechanical Keyboard order?", "expect": "TRK101"},
+    {"task": "Where is my Phone Charger order?", "expect": "TRK102"},
+    {"task": "Where is my Desk Lamp order?", "expect": None},
+    {"task": "Where is my Standing Desk order?", "expect": None},
 ]
 
 
 # ============================================================
-# The control loop with an escalation path
+# The agent loop, with a turn limit that escalates
 # ============================================================
 
-def run_agent(user_message: str, max_turns: int) -> dict:
-    """Call -> parse -> run tools -> append -> check stop, with a turn limit.
-
-    If the agent is still asking for tools on its last allowed turn, the harness
-    does not run them. It stops and marks the task as escalated, and the caller
-    builds the handoff from tool_log (no extra model call).
-    """
-    messages = [{"role": "user", "content": [{"text": user_message}]}]
-    total_input = total_output = 0
-    tool_log: list[dict] = []
+def run_agent(task: str, max_turns: int) -> dict:
+    """Call the model, run the tool, repeat. Escalate if max_turns is reached."""
+    messages = [{"role": "user", "content": [{"text": task}]}]
+    input_tokens = output_tokens = lookups = 0
 
     for turn in range(1, max_turns + 1):
         resp = RUNTIME.converse(
@@ -206,122 +130,132 @@ def run_agent(user_message: str, max_turns: int) -> dict:
             toolConfig=TOOL_CONFIG,
             inferenceConfig={"maxTokens": 512, "temperature": 0},
         )
-        total_input += resp["usage"]["inputTokens"]
-        total_output += resp["usage"]["outputTokens"]
+        input_tokens += resp["usage"]["inputTokens"]
+        output_tokens += resp["usage"]["outputTokens"]
+        message = resp["output"]["message"]
+        messages.append(message)
 
-        out_message = resp["output"]["message"]
-        messages.append(out_message)  # keep the assistant turn in context
+        result = {"turns": turn, "input_tokens": input_tokens,
+                  "output_tokens": output_tokens, "lookups": lookups}
 
-        if resp.get("stopReason") != "tool_use":
-            text = next((b["text"] for b in out_message["content"] if "text" in b), "")
-            return {"text": text, "turns": turn, "input_tokens": total_input,
-                    "output_tokens": total_output, "escalated": False, "tool_log": tool_log}
+        if resp["stopReason"] != "tool_use":  # the agent answered
+            text = next((b["text"] for b in message["content"] if "text" in b), "")
+            return {**result, "text": text, "escalated": False}
 
-        if turn == max_turns:
-            break  # turn limit reached while the agent still wants tools
+        if turn == max_turns:  # still asking for tools at the limit: escalate
+            return {**result, "text": "", "escalated": True}
 
-        # Run every requested tool and feed the results back as one user turn.
         tool_results = []
-        for block in out_message["content"]:
-            if "toolUse" not in block:
-                continue
-            tu = block["toolUse"]
-            impl = TOOL_IMPLS.get(tu["name"])
-            result = impl(**tu["input"]) if impl else f"Unknown tool: {tu['name']}"
-            tool_log.append({"tool": tu["name"], "input": tu["input"], "result": result})
-            tool_results.append(
-                {"toolResult": {"toolUseId": tu["toolUseId"],
-                                "content": [{"text": result}]}}
-            )
+        for block in message["content"]:
+            if "toolUse" in block:
+                use = block["toolUse"]
+                lookups += 1
+                tool_results.append({"toolResult": {
+                    "toolUseId": use["toolUseId"],
+                    "content": [{"text": list_orders(**use["input"])}],
+                }})
         messages.append({"role": "user", "content": tool_results})
-
-    return {"text": "", "turns": max_turns, "input_tokens": total_input,
-            "output_tokens": total_output, "escalated": True, "tool_log": tool_log}
-
-
-def build_handoff(task: str, result: dict) -> str:
-    """Write the note for the human from the harness log. Pure code, zero tokens."""
-    log = result["tool_log"]
-    last = log[-1] if log else None
-    last_line = f"{last['tool']}({last['input']})" if last else "none"
-    return (
-        f"Customer asked: {task} | agent used {result['turns']} turns and "
-        f"{len(log)} tool calls without an answer | last tool call: {last_line}"
-    )
 
 
 # ============================================================
 # Helpers
 # ============================================================
 
-def is_resolved(case: dict, result: dict) -> bool:
-    """A task is resolved if the agent finished with an answer containing the expected text."""
-    if result["escalated"] or case["expect"] is None:
-        return False
-    return case["expect"].lower() in result["text"].lower()
+def cost(result: dict) -> float:
+    return (result["input_tokens"] * INPUT_PRICE + result["output_tokens"] * OUTPUT_PRICE) / 1_000_000
 
 
-def calculate_cost(input_tokens: int, output_tokens: int) -> float:
-    prices = PRICING[HAIKU]
-    return (input_tokens / 1_000_000) * prices["input"] + (
-        output_tokens / 1_000_000
-    ) * prices["output"]
-
-
-def run_eval_set(max_turns: int, label: str) -> list[dict]:
-    """Run every eval case with the given turn limit and score it."""
+def run_eval_set(max_turns: int, escalation: bool) -> list[dict]:
+    """Run every eval case with the given turn limit and mark which were resolved."""
     results = []
-    for i, case in enumerate(EVAL_CASES, start=1):
-        print(f"  [{label}] case {i} of {len(EVAL_CASES)}: {case['task']}")
+    for case in EVAL_CASES:
         r = run_agent(case["task"], max_turns)
-        r["resolved"] = is_resolved(case, r)
+        r["resolved"] = (
+            not r["escalated"] and case["expect"] is not None and case["expect"] in r["text"]
+        )
+        print(f"  {case['task']}")
+        print(f"      -> {r['turns']} turns, {outcome(r, escalation)}")
         results.append(r)
     return results
-
-
-def derive_escalation_threshold(results: list[dict]) -> int:
-    """Pick N from eval results: the most turns any RESOLVED task needed."""
-    resolved_turns = sorted(r["turns"] for r in results if r["resolved"])
-    print(f"  Turns taken by each task the agent resolved: {resolved_turns}")
-    if not resolved_turns:
-        return EVAL_MAX_TURNS
-    return max(resolved_turns)
-
-
-def print_divider() -> None:
-    print("\n" + "-" * 70 + "\n")
 
 
 def outcome(r: dict, escalation: bool) -> str:
     if r["resolved"]:
         return "resolved"
     if r["escalated"]:
-        return "handed to a human" if escalation else "stopped at the hard cap, no answer"
+        return (
+            "still searching, handed to a human"
+            if escalation
+            else "still searching when the limit stopped it, customer gets no answer"
+        )
     return "answered without resolving"
+
+
+def print_intro() -> None:
+    print("--- Human Escalation Path: escalate after N turns, set N from eval results ---")
+    print(f"  Model: {HAIKU}")
+    print(f"  Eval set: {len(EVAL_CASES)} tasks")
+    solvable = sum(c["expect"] is not None for c in EVAL_CASES)
+    unsolvable = len(EVAL_CASES) - solvable
+    print(f"""
+BACKGROUND
+  A customer-support agent helps customers find their orders. It has one tool,
+  list_orders, which returns ONE order per call (item, status, tracking code)
+  plus a cursor for the next one. The agent keeps calling the tool until it
+  finds the order the customer asked about, then replies with the tracking code.
+
+  A "turn" is one model call. After each tool call the whole conversation so far
+  is sent to the model again, so every turn costs more than the one before it.
+
+THE PROBLEM
+  If the order is near the top of the list, the agent finds it in a few turns.
+  If the order is NOT in the list (a wrong item name, an order under another
+  account), the agent keeps paging until something stops it. It burns tokens on
+  every turn and the customer never gets an answer.
+
+THE FIX
+  Hand the case to a human once the agent has used N turns without an answer.
+  The hard part is choosing N:
+    - Too low: you escalate tasks the agent could have solved.
+    - Too high: you pay for turns that were never going to find the order.
+  So we do not guess. We measure how many turns the solvable tasks really need
+  and set N from that.
+
+WHAT THIS DEMO DOES
+  Step 1  Run {len(EVAL_CASES)} test tasks ({solvable} the agent can solve, {unsolvable} it cannot) with a
+          generous turn limit, and record how many turns each one takes.
+  Step 2  Set N to the most turns any SOLVED task needed.
+  Step 3  Run the same tasks again, handing off to a human after N turns.
+  Then compare turns, tokens, and cost with and without the escalation path.
+""")
+
+
+def print_divider() -> None:
+    print("\n" + "-" * 70 + "\n")
 
 
 def print_comparison_table(baseline: list[dict], escalated: list[dict], n: int) -> None:
     rows = [("No escalation", baseline), (f"Escalate after {n} turns", escalated)]
-    base_cost = sum(calculate_cost(r["input_tokens"], r["output_tokens"]) for r in baseline)
+    base_cost = sum(cost(r) for r in baseline)
 
     print("--- Comparison: same eval set, with and without an escalation path ---")
-    print(f"{'Policy':<22} {'Turns':>6} {'Input tokens':>13} {'Output tokens':>14} "
+    print(f"{'Policy':<24} {'Turns':>6} {'Input tokens':>13} {'Output tokens':>14} "
           f"{'Cost $':>9} {'Relative cost':>14} {'Resolved':>9} {'Hit turn limit':>15}")
     for label, results in rows:
-        turns = sum(r["turns"] for r in results)
-        in_tok = sum(r["input_tokens"] for r in results)
-        out_tok = sum(r["output_tokens"] for r in results)
-        cost = calculate_cost(in_tok, out_tok)
-        resolved = sum(1 for r in results if r["resolved"])
-        stopped = sum(1 for r in results if r["escalated"])
-        print(f"{label:<22} {turns:>6} {in_tok:>13} {out_tok:>14} "
-              f"{cost:>9.5f} {cost / base_cost:>13.2f}x {resolved:>9} {stopped:>15}")
+        total_cost = sum(cost(r) for r in results)
+        print(f"{label:<24} {sum(r['turns'] for r in results):>6} "
+              f"{sum(r['input_tokens'] for r in results):>13} "
+              f"{sum(r['output_tokens'] for r in results):>14} "
+              f"{total_cost:>9.5f} {total_cost / base_cost:>13.2f}x "
+              f"{sum(r['resolved'] for r in results):>9} "
+              f"{sum(r['escalated'] for r in results):>15}")
     print(
-        f"\n  Both policies resolve the same tasks. The saving comes from the tasks the"
-        f"\n  agent cannot solve: they stop after {n} turns instead of running on, and a"
-        f"\n  person gets a handoff note instead of the customer getting an error."
-        f"\n  Under the hard cap, 'Hit turn limit' tasks end with no answer; under the"
-        f"\n  escalation path they go to a human."
+        "\n  Turns = total model calls across all tasks. Hit turn limit = tasks that were"
+        "\n  stopped because the agent was still searching."
+        "\n"
+        "\n  Both policies resolve the same tasks. The saving comes from the tasks the"
+        "\n  agent cannot solve: they stop after N turns instead of running to the"
+        "\n  limit, and a person gets the case instead of the customer getting nothing."
     )
 
 
@@ -330,38 +264,42 @@ def print_comparison_table(baseline: list[dict], escalated: list[dict], n: int) 
 # ============================================================
 
 def main():
-    print("--- Human Escalation Path: escalate after N turns, set N from eval results ---")
-    print(f"  Model: {HAIKU}")
-    print(f"  Eval set: {len(EVAL_CASES)} tasks | hard cap while measuring: {EVAL_MAX_TURNS} turns")
+    print_intro()
 
     print_divider()
-    print("Step 1 of 4: run the eval set with a generous turn cap\n")
-    baseline = run_eval_set(EVAL_MAX_TURNS, "no escalation")
+    print(f"Step 1 of 3: run the test tasks with a generous limit ({EVAL_MAX_TURNS} turns)\n")
+    print("  The limit is high on purpose, so every task the agent can solve gets the")
+    print("  chance to finish. This shows how many turns the solvable tasks really need.\n")
+    baseline = run_eval_set(EVAL_MAX_TURNS, escalation=False)
+    print("\n  Why did some tasks use all the turns? The Desk Lamp and Standing Desk are not")
+    print("  in the customer's order list. The agent cannot know that without checking")
+    print("  every order, so it kept paging through the list until the limit stopped it.")
+    print("  It never found the order and never gave the customer an answer.")
 
     print_divider()
-    print("Step 2 of 4: set N from the eval results\n")
-    n = derive_escalation_threshold(baseline)
-    print(f"  Escalation threshold N = {n} turns "
-          f"(the slowest resolved task needed {n}; anything past that is not converging)")
+    print("Step 2 of 3: set N from the results\n")
+    resolved_turns = sorted(r["turns"] for r in baseline if r["resolved"])
+    n = max(resolved_turns, default=EVAL_MAX_TURNS)
+    print(f"  Turns needed by the tasks the agent solved: {resolved_turns}")
+    print(f"  N = {n}, the most turns any solved task needed.")
+    print("  A task still going after that many turns is unlikely to be solved, so")
+    print("  it is cheaper to hand it to a person than to keep paying for more turns.")
 
     print_divider()
-    print(f"Step 3 of 4: run the eval set again, escalating to a human after {n} turns\n")
-    escalated = run_eval_set(n, f"escalate after {n}")
+    print(f"Step 3 of 3: run the same tasks, handing off to a human after {n} turns\n")
+    print("  Solved tasks finish exactly as before. Tasks that are still asking for")
+    print("  tools at the limit are stopped and handed over.\n")
+    escalated = run_eval_set(n, escalation=True)
 
     print_divider()
-    print("Step 4 of 4: compare, task by task\n")
+    print("Results, task by task\n")
     for case, base, esc in zip(EVAL_CASES, baseline, escalated):
-        base_cost = calculate_cost(base["input_tokens"], base["output_tokens"])
-        esc_cost = calculate_cost(esc["input_tokens"], esc["output_tokens"])
         print(f"Task: {case['task']}")
-        print(f"  No escalation  : {base['turns']} turns | "
-              f"{base['input_tokens'] + base['output_tokens']:>5} tokens | "
-              f"${base_cost:.5f} | {outcome(base, False)}")
-        print(f"  Escalate at {n:<3}: {esc['turns']} turns | "
-              f"{esc['input_tokens'] + esc['output_tokens']:>5} tokens | "
-              f"${esc_cost:.5f} | {outcome(esc, True)}")
+        print(f"  No escalation : {base['turns']} turns | ${cost(base):.5f} | {outcome(base, False)}")
+        print(f"  Escalate at {n} : {esc['turns']} turns | ${cost(esc):.5f} | {outcome(esc, True)}")
         if esc["escalated"]:
-            print(f"  Handoff note   : {build_handoff(case['task'], esc)}")
+            print(f"  Note for human: customer asked '{case['task']}'; the agent made "
+                  f"{esc['lookups']} lookups and did not find the order.")
         print()
 
     print_divider()
@@ -371,8 +309,7 @@ def main():
     print("  Next steps:")
     print("  1. Measure turns-to-resolution on your own eval set before choosing N")
     print("  2. Re-measure after prompt, tool, or model changes - N moves with them")
-    print("  3. Build the handoff note from your harness log so escalation costs no tokens")
-    print("  4. Track the escalation rate: a rising rate means the agent, not N, needs work")
+    print("  3. Track the escalation rate: a rising rate means the agent, not N, needs work")
 
 
 if __name__ == "__main__":
