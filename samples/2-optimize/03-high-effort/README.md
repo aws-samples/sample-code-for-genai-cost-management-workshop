@@ -21,6 +21,7 @@ The samples use the workshop's allowed models via Global cross-region inference 
 |--------|-------|----------------------|
 | `03-1_memory_storage_tiers.py` | 13 - Memory Storage Tiers | A local simulation of hot and cold memory tiers: hot facts stay in the prompt and old facts are searched on demand, answering the same questions as keeping everything in the prompt with ~95% fewer input tokens |
 | `03-2_dynamic_tool_infrastructure.py` | 14 - Dynamic Tool Infrastructure | The same Strands agent answers one query against a local MCP server twice - once loading all 101 tools, once with a tool filter that loads only the one it needs - showing ~93% fewer input tokens for the same answer |
+| `03-3_long_running_agent_state.py` | 15 - Long-Running Agent State | A refund-review agent pauses to ask the user and waits hours, then finishes the task two ways: replaying the full conversation vs resuming from a small checkpoint saved outside the context, with ~87% fewer input tokens |
 | `03-4_multi_agent_orchestration.py` | 16 - Multi-Agent Orchestration | The same question over a large document as a single Claude 5 Sonnet agent, an uncapped split (one Haiku worker per section), and a capped split (a fixed number of workers), comparing agents, tokens, latency, and total cost |
 | `03-6_human_escalation_path.py` | 18 - Human Escalation Path | A support agent runs an eval set, N is derived from the turns its resolved tasks needed, and tasks that exceed N are handed to a human with a note built by code, comparing turns, tokens, and cost against no escalation |
 
@@ -29,6 +30,7 @@ Run any script directly:
 ```bash
 python 03-1_memory_storage_tiers.py
 python 03-2_dynamic_tool_infrastructure.py
+python 03-3_long_running_agent_state.py
 python 03-4_multi_agent_orchestration.py
 python 03-6_human_escalation_path.py
 ```
@@ -39,7 +41,6 @@ These levers from the deck do not have a sample yet:
 
 | Slot | Lever | Idea |
 |------|-------|------|
-| 03-3 | 15 - Long-Running Agent State | Save task state outside the context and resume from it instead of replaying the full history |
 | 03-5 | 17 - Security and Permission Boundaries | Enforce tool access in AgentCore Gateway Policy, not in the prompt |
 
 ## The Levers
@@ -51,6 +52,10 @@ An agent that keeps all of its memory in the prompt pays for every stored fact o
 ### Dynamic Tool Infrastructure (lever 14)
 
 Every tool an agent can call - its name, description, and input schema - is sent to the model on every call and billed as input tokens. Plug an agent into a large MCP server and it pays for the whole catalog on every request, even when the task needs one tool; and because an agent makes at least two model calls per query (pick the tool, then answer), the unused catalog is paid for again and again. The sample starts a local MCP server (stdio, nothing deployed) that exposes 101 tools - one real `get_weather` and 100 fake business tools - and runs the same Strands agent on the same question twice: once with the **full catalog**, once with a **tool filter** on the MCP client (`tool_filters={"allowed": ["get_weather"]}`). The filtered run uses ~93% fewer input tokens and is ~12x cheaper per query for the same answer. The fix is configuration, not code: give each agent a focused job and load only the tools that job needs. When the catalog is too large or changes too often to filter by hand, move tool selection into the infrastructure with AgentCore Gateway semantic tool search, which selects tools per query. It depends on provisioned infrastructure (a gateway, Cognito, Lambda targets), so it belongs with a full deployment rather than a standalone script.
+
+### Long-Running Agent State (lever 15)
+
+Some tasks cannot finish in one sitting: the agent needs a person's approval or input, and the answer may take hours. While it waits nothing runs, so waiting costs no model tokens. The cost shows up when the agent comes back. If it replays the whole conversation, the prompt holds every tool result from the work already done, and that history is re-sent on every remaining turn. The better design saves the agent's state outside the context while it works (here, the decisions made so far), and resumes from that small checkpoint in a fresh context. The sample is a refund-review agent that reviews 20 requests, asks the user about the one over its approval limit, and waits (the wait is simulated, with no sleep). It then finishes the task both ways. Both reach the correct total, but resuming from the checkpoint used about 87% fewer input tokens (about 0.19x the cost) than replaying the history, because the first turn carried about 1,100 tokens instead of about 7,200. Saving state also means the process can shut down during the wait. In production the checkpoint would live in a store such as Amazon DynamoDB or Amazon S3, or in Amazon Bedrock AgentCore Memory.
 
 ### Multi-Agent Orchestration (lever 16)
 
