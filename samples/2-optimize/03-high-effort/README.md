@@ -1,10 +1,10 @@
 # High Effort
 
-Cost-and-latency optimization levers for when the lower tiers aren't enough - compound-AI patterns that add real complexity, earned on evidence. Reach for them only after the [low-effort](../01-low-effort/) and [medium-effort](../02-medium-effort/) levers are applied, measured, and still short of target.
+Cost-and-latency optimization levers for when the lower tiers aren't enough - changes to architecture or state: more components, orchestration, persistent state, security boundaries, or operational ownership. Reach for them only after the [low-effort](../01-low-effort/) and [medium-effort](../02-medium-effort/) levers are applied, measured, and still short of target.
 
 ## Overview
 
-Each script is a standalone, runnable demonstration of one lever, matching the repo's Python sample style. `03-1` and `03-2` are implemented with plain boto3 (no agent framework); `03-3` uses a Strands agent with a local MCP server, because the lever is about how an agent loads MCP tools. All of them run with the repo's base dependencies, and each prints the token signal that makes the lever's payoff visible.
+The tier has six levers (13-18 in the workshop deck). File numbers follow the deck order, so a gap in the numbering is a lever that does not have a runnable sample yet. Each script is a standalone, runnable demonstration of one lever, matching the repo's Python sample style. Each prints a comparison table at the end, so the lever's payoff is visible in tokens, calls, and cost.
 
 ## Models Used
 
@@ -19,38 +19,41 @@ The samples use the workshop's allowed models via Global cross-region inference 
 
 | Script | Lever | What it demonstrates |
 |--------|-------|----------------------|
-| `03-1_harness_engineering.py` | Harness Engineering | A minimal but real agent loop (call, parse, run tools, check stop) with a turn-budget guardrail, plus a lean-vs-bloated context comparison showing tokens re-sent every turn |
-| `03-2_sub_agent_delegation.py` | Sub-Agent Delegation | An orchestrator-worker split - a cheap Haiku worker digests a large document, and the expensive Claude 5 Sonnet lead reasons over only the compact summary - vs a single-agent baseline |
-| `03-3_dynamic_tool_infrastructure.py` | Dynamic Tool Infrastructure | The same Strands agent answers one query against a local MCP server twice - once loading all 101 tools, once with a tool filter that loads only the one it needs - showing ~93% fewer input tokens for the same answer |
+| `03-2_dynamic_tool_infrastructure.py` | 14 - Dynamic Tool Infrastructure | The same Strands agent answers one query against a local MCP server twice - once loading all 101 tools, once with a tool filter that loads only the one it needs - showing ~93% fewer input tokens for the same answer |
+| `03-4_multi_agent_orchestration.py` | 16 - Multi-Agent Orchestration | The same question over a large document as a single Claude 5 Sonnet agent, an uncapped split (one Haiku worker per section), and a capped split (a fixed number of workers), comparing agents, tokens, latency, and total cost |
+| `03-6_human_escalation_path.py` | 18 - Human Escalation Path | A support agent runs an eval set, N is derived from the turns its resolved tasks needed, and tasks that exceed N are handed to a human with a note built by code, comparing turns, tokens, and cost against no escalation |
 
 Run any script directly:
 
 ```bash
-python 03-1_harness_engineering.py
-python 03-2_sub_agent_delegation.py
-python 03-3_dynamic_tool_infrastructure.py
+python 03-2_dynamic_tool_infrastructure.py
+python 03-4_multi_agent_orchestration.py
+python 03-6_human_escalation_path.py
 ```
+
+### Not yet implemented
+
+These levers from the deck do not have a sample yet:
+
+| Slot | Lever | Idea |
+|------|-------|------|
+| 03-1 | 13 - Memory Storage Tiers | Do not keep all agent memory in fast storage; move inactive memory to lower-cost tiers |
+| 03-3 | 15 - Long-Running Agent State | Save task state outside the context and resume from it instead of replaying the full history |
+| 03-5 | 17 - Security and Permission Boundaries | Enforce tool access in AgentCore Gateway Policy, not in the prompt |
 
 ## The Levers
 
-### 1. Harness Engineering
+### Dynamic Tool Infrastructure (lever 14)
 
-The model is one component; the harness is the deterministic scaffolding around it - tools, context curation, the control loop, retries, a turn budget, evals, and code-level guardrails. An agent is just "an LLM using tools in a loop," and the loop is where cost and latency live because two numbers dominate the bill: **tokens per turn** (you re-send the growing context every turn) and **turns per task** (each turn is a full round-trip). The sample builds a working loop with a turn budget so a runaway agent can't quietly multiply your bill, then shows that a bloated system prompt is a surcharge paid on *every* turn. Trim the context, cache the stable prefix (see [01-4](../01-low-effort/01-4_prompt_caching.py)), and consolidate tool calls to cut round-trips.
+Every tool an agent can call - its name, description, and input schema - is sent to the model on every call and billed as input tokens. Plug an agent into a large MCP server and it pays for the whole catalog on every request, even when the task needs one tool; and because an agent makes at least two model calls per query (pick the tool, then answer), the unused catalog is paid for again and again. The sample starts a local MCP server (stdio, nothing deployed) that exposes 101 tools - one real `get_weather` and 100 fake business tools - and runs the same Strands agent on the same question twice: once with the **full catalog**, once with a **tool filter** on the MCP client (`tool_filters={"allowed": ["get_weather"]}`). The filtered run uses ~93% fewer input tokens and is ~12x cheaper per query for the same answer. The fix is configuration, not code: give each agent a focused job and load only the tools that job needs. When the catalog is too large or changes too often to filter by hand, move tool selection into the infrastructure with AgentCore Gateway semantic tool search, which selects tools per query. It depends on provisioned infrastructure (a gateway, Cognito, Lambda targets), so it belongs with a full deployment rather than a standalone script.
 
-### 2. Sub-Agent Delegation
+### Multi-Agent Orchestration (lever 16)
 
-A single agent carries every tool result and intermediate step in one context window that is re-sent every turn. Delegation breaks this with an orchestrator-worker split: a **lead** plans and answers; a **worker** does the token-heavy subtask (search, extract, summarize) in its own isolated context and returns only a compact result. The cost lever is the model choice - route the worker to a cheap model and keep the strong model on the lead, where it sees only the question and the compressed result. The sample shows the expensive lead using ~96% fewer input tokens than a single-agent baseline that ingests the whole document itself. Mind the orchestration overhead: every delegation is a separate call, so make sure the lead's context savings exceed it - and a worker with bad tool descriptions is just bad, faster, so fix the harness (03-1) first.
+Every agent adds model calls and tokens: its own instructions, its own context, its own output. Split a task across agents only for **isolation** (a worker digests token-heavy material in its own context and returns a compact result, so the strong lead never re-reads it) or for **parallel work**. Then **cap the fan-out**. The sample runs the same question over a 40-section document three ways. The single Claude 5 Sonnet agent reads everything. The uncapped split spawns one Haiku worker per section, so the lead reads 40 partial results and the run pays for 41 agents. The capped split lets the lead ask for 40 workers but the harness spawns at most `MAX_WORKERS` (4), enforced in code rather than in the prompt. In one sample run the capped split cost about 0.44x the single agent and the uncapped split about 1.19x, so the isolation win only holds when the overhead stays small. Compare total cost across all agents, not just the lead's tokens.
 
-### 3. Dynamic Tool Infrastructure
+### Human Escalation Path (lever 18)
 
-Every tool an agent can call - its name, description, and input schema - is sent to the model on every call and billed as input tokens. Plug an agent into a large MCP server and it pays for the whole catalog on every request, even when the task needs one tool; and because an agent makes at least two model calls per query (pick the tool, then answer), the unused catalog is paid for again and again. The sample starts a local MCP server (stdio, nothing deployed) that exposes 101 tools - one real `get_weather` and 100 fake business tools - and runs the same Strands agent on the same question twice: once with the **full catalog**, once with a **tool filter** on the MCP client (`tool_filters={"allowed": ["get_weather"]}`). The filtered run uses ~93% fewer input tokens and is ~12x cheaper per query for the same answer. The fix is configuration, not code: give each agent a focused job and load only the tools that job needs. When the catalog is too large or changes too often to filter by hand, move tool selection into the infrastructure - see Tool Search via MCP Gateway below.
-
-## Covered as concept / reference (no sample here)
-
-Two levers from the source playbook are documented as concepts rather than runnable samples in this repo:
-
-- **GEPA / DSPy** - open-source programmatic prompt optimization. A real `compile()` needs a training set and runs for minutes to hours, so it is a reference pattern, not a live sample. The managed counterpart is Bedrock Advanced Prompt Optimization.
-- **Tool Search via MCP Gateway** - AgentCore Gateway semantic tool search. It depends on provisioned infrastructure (a gateway, Cognito, Lambda targets), so it belongs with a full deployment rather than a standalone script. For the problem it solves, see `03-3`: the same agent sends ~15x more input tokens when it loads a full MCP catalog instead of only the tools it needs. Gateway tool search automates that selection per query.
+An agent that cannot finish a task keeps looping, and every extra turn re-sends the whole growing context. A turn cap stops the loop; an escalation path also hands the case to a person with a note of what was already tried. The sample runs a support agent over a small eval set against a paged order history: lookups near the top need two or three turns, lookups further down need more, and orders that are not in the history keep the agent paging. It first measures turns on the eval set with a generous cap, sets **N** to the most turns any resolved task needed, then runs the set again and escalates at N. Too low an N escalates tasks the agent could have solved; too high an N pays for turns that never converge. The handoff note is built from the harness's own tool log, so escalating costs no extra model tokens. In one sample run N came out at 5 and the escalation policy cost about 0.77x the no-escalation run for the same resolved tasks.
 
 ## Prerequisites
 
@@ -62,4 +65,4 @@ Two levers from the source playbook are documented as concepts rather than runna
 
 ## Model Compatibility Note
 
-Claude 5 Sonnet is **thinking-capable**, so its Converse response can lead with a `reasoningContent` block before the `text` block - the answer is not necessarily `content[0]`. The sub-agent sample extracts the text block explicitly and gives the lead a generous `maxTokens` so reasoning plus the final answer fit within the budget.
+Claude 5 Sonnet is **thinking-capable**, so its Converse response can lead with a `reasoningContent` block before the `text` block - the answer is not necessarily `content[0]`. The multi-agent orchestration sample extracts the text block explicitly and gives the lead a generous `maxTokens` so reasoning plus the final answer fit within the budget.

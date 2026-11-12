@@ -51,11 +51,11 @@ The [03-high-effort](03-high-effort/) tier has runnable samples today:
 
 | Script | Lever | What it demonstrates |
 |--------|-------|----------------------|
-| [03-1_harness_engineering.py](03-high-effort/03-1_harness_engineering.py) | Harness Engineering | A minimal agent loop (call/parse/tool/check-stop) with a turn-budget guardrail, plus a lean-vs-bloated context comparison |
-| [03-2_sub_agent_delegation.py](03-high-effort/03-2_sub_agent_delegation.py) | Sub-Agent Delegation | A cheap Haiku worker digests a large document; the Claude 5 Sonnet lead reasons over only the summary - ~96% fewer tokens on the pricey model |
-| [03-3_dynamic_tool_infrastructure.py](03-high-effort/03-3_dynamic_tool_infrastructure.py) | Dynamic Tool Infrastructure | The same Strands agent on a local MCP server, full 101-tool catalog vs a tool filter that loads only the one it needs - ~93% fewer input tokens |
+| [03-2_dynamic_tool_infrastructure.py](03-high-effort/03-2_dynamic_tool_infrastructure.py) | Dynamic Tool Infrastructure | The same Strands agent on a local MCP server, full 101-tool catalog vs a tool filter that loads only the one it needs - ~93% fewer input tokens |
+| [03-4_multi_agent_orchestration.py](03-high-effort/03-4_multi_agent_orchestration.py) | Multi-Agent Orchestration | A single Claude 5 Sonnet agent vs an uncapped split (one Haiku worker per section) vs a capped split (a fixed number of workers), comparing agents, tokens, latency, and total cost |
+| [03-6_human_escalation_path.py](03-high-effort/03-6_human_escalation_path.py) | Human Escalation Path | N is derived from eval results, then tasks that exceed N turns are handed to a human with a note built by code, comparing turns, tokens, and cost against no escalation |
 
-Two further levers from the playbook - GEPA/DSPy and Tool Search via MCP Gateway - are covered as concepts rather than runnable samples (they need a training set or provisioned infrastructure). `03-3` shows the problem Tool Search solves, with no infrastructure. See the [high-effort README](03-high-effort/README.md) for details.
+File numbers follow the deck order for the six high-effort levers, so the gaps (03-1 memory storage tiers, 03-3 long-running agent state, 03-5 security and permission boundaries) are levers without a runnable sample yet. See the [high-effort README](03-high-effort/README.md) for details.
 
 ## Models Used
 

@@ -1,5 +1,5 @@
 """
-High-Effort Optimization - Lever 03: Dynamic Tool Infrastructure
+High-Effort Optimization - Lever 14: Dynamic Tool Infrastructure
 
 Every tool you give an agent - its name, description, and input schema - is
 sent to the model on every call and billed as input tokens. Connect an agent
@@ -175,12 +175,15 @@ def compare_tool_catalogs() -> None:
         print(f"{result['text']}\n")
 
     print("--- Comparison: same query, two tool catalogs ---")
-    print(f"{'Catalog':<18} {'Tools':>6} {'In':>7} {'Out':>6} {'ms':>7} {'$/call':>11}")
+    print(
+        f"{'Catalog':<18} {'Tools':>6} {'Input tokens':>13} {'Output tokens':>14} "
+        f"{'ms':>7} {'$/call':>11}"
+    )
     for label, result in runs:
         cost = calculate_cost(result["input_tokens"], result["output_tokens"], HAIKU)
         print(
-            f"{label:<18} {result['tools_loaded']:>6} {result['input_tokens']:>7} "
-            f"{result['output_tokens']:>6} {result['latency_ms']:>7} {cost:>11.6f}"
+            f"{label:<18} {result['tools_loaded']:>6} {result['input_tokens']:>13} "
+            f"{result['output_tokens']:>14} {result['latency_ms']:>7} {cost:>11.6f}"
         )
 
     # Savings of the filtered run versus the full catalog, in tokens and dollars.
