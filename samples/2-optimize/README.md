@@ -12,7 +12,7 @@ The samples are organized by how much work each lever takes to adopt. Start LOW,
 |------|--------|----------------|
 | Low effort | [01-low-effort](01-low-effort/) | One-line changes, parameter tweaks, and short prompt refactors; the optional AgentCore evaluation sample uses CloudWatch observability |
 | Medium effort | [02-medium-effort](02-medium-effort/) | Architectural moves on well-trodden paths - some app or config change plus modest validation |
-| High effort | [03-high-effort](03-high-effort/) | Compound-AI patterns that add real complexity, earned on evidence |
+| High effort | [03-high-effort](03-high-effort/) | Architecture or state: added components, orchestration, persistent state, security boundaries, or operational ownership, earned on evidence |
 
 ## Low Effort Samples
 
@@ -47,7 +47,7 @@ See the [medium-effort README](02-medium-effort/README.md) for details on each l
 
 ## High Effort Samples
 
-The [03-high-effort](03-high-effort/) tier has runnable samples today:
+The [03-high-effort](03-high-effort/) tier has runnable samples today, one per lever:
 
 | Script | Lever | What it demonstrates |
 |--------|-------|----------------------|
@@ -55,9 +55,10 @@ The [03-high-effort](03-high-effort/) tier has runnable samples today:
 | [03-2_dynamic_tool_infrastructure.py](03-high-effort/03-2_dynamic_tool_infrastructure.py) | Dynamic Tool Infrastructure | The same Strands agent on a local MCP server, full 101-tool catalog vs a tool filter that loads only the one it needs - ~93% fewer input tokens |
 | [03-3_long_running_agent_state.py](03-high-effort/03-3_long_running_agent_state.py) | Long-Running Agent State | An agent that pauses for hours to ask the user, then finishes by replaying its full history vs resuming from a small checkpoint saved outside the context - ~87% fewer input tokens |
 | [03-4_multi_agent_orchestration.py](03-high-effort/03-4_multi_agent_orchestration.py) | Multi-Agent Orchestration | A single Claude 5 Sonnet agent vs an uncapped split (one Haiku worker per section) vs a capped split (a fixed number of workers), comparing agents, tokens, latency, and total cost |
+| [03-5_security_permission_boundaries.py](03-high-effort/03-5_security_permission_boundaries.py) | Security and Permission Boundaries | Permissions written in the prompt vs enforced by a policy checked on every tool call, across attacks and legitimate requests, comparing forbidden actions executed and cost |
 | [03-6_human_escalation_path.py](03-high-effort/03-6_human_escalation_path.py) | Human Escalation Path | N is derived from eval results, then tasks that exceed N turns are handed to a human with a note built by code, comparing turns, tokens, and cost against no escalation |
 
-File numbers follow the deck order for the six high-effort levers, so the gap (03-5 security and permission boundaries) is a lever without a runnable sample yet. See the [high-effort README](03-high-effort/README.md) for details.
+File numbers follow the deck order for the six high-effort levers. See the [high-effort README](03-high-effort/README.md) for details.
 
 ## Models Used
 
