@@ -4,7 +4,7 @@
 
 Sample code for the AWS Workshop: **Track and Optimize Generative AI Spend on AWS**
 
-**Level:** 300 – Advanced | **Duration:** 3 hours
+**Level:** 300 – Advanced | **Duration:** 5 hours
 
 ## Overview
 
@@ -13,6 +13,8 @@ As organizations scale their generative AI workloads on [Amazon Bedrock](https:/
 This workshop is organized into two parts. **Track** provides hands-on experience with six AWS-native cost attribution mechanisms plus LiteLLM as a third-party option, so you know *who is spending what, and where*. **Optimize** then shows how to *reduce* that spend using Amazon Bedrock's built-in cost-reduction levers, without sacrificing quality. You'll learn to implement each mechanism, combine them for real-world scenarios, and build cost dashboards for operational visibility.
 
 > The **Track** samples live under [`samples/1-track/`](samples/1-track/) and the **Optimize** samples under [`samples/2-optimize/`](samples/2-optimize/), the latter organized into low-, medium-, and high-effort tiers.
+
+> **Note:** The **Track** and **Optimize** parts are independent. Neither depends on the other, so you can do only one of them, or do both in any order. Complete the environment setup first, then go straight to the part that interests you.
 
 For a detailed, hands-on walkthrough of the concepts covered here, see the companion workshop: [Track and Optimize Generative AI Spend on AWS](https://catalog.workshops.aws/track-genai-spend-on-aws).
 
